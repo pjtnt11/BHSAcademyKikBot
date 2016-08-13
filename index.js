@@ -311,7 +311,7 @@
 			break
 
 			case "voting_actions":
-			let VotingActionsString = Bot.Message.text("What what would you like to do with voting").addResponseKeyboard(["Create a Poll", "End a Poll", "View Pasts Results", "🔙 To Admin Actions"])
+			let VotingActionsString = Bot.Message.text("What what would you like to do with voting").addResponseKeyboard(["Create a Poll", "End a Poll", "🔙 To Admin Actions"])
 
 			callback(VotingActionsString)
 			break
@@ -356,6 +356,22 @@
 			callback(votingOptionsString)
 			break
 
+			case "end_a_poll":
+			var pollTitles = []
+			votingRef.child("polls").child("active").on("child_added", function(snapshot)
+			{
+				pollTitles.push(snapshot.val().title)
+			})
+
+			votingRef.child("polls").child("active").once("value", function(snapshot)
+			{
+				pollTitles.push("🔙 To Voting Actions")
+				let endVotingString = Bot.Message.text("Here are the current active polls. Click one of them to stop taking responces. (Note: You will no longer be able to view responces unless you ask @pjtnt11)").addResponseKeyboard(pollTitles)
+
+				callback(endVotingString)
+			})
+			break
+
 			case "view_poll_results":
 
 			let activePolls = []
@@ -398,7 +414,9 @@
 				{
 					votingRef.child("polls").child("active").child(userVotePendingKey).child("items").on("child_added", function(snapshot)
 					{
-						votingItems.push(snapshot.key)
+						var UsersDecodedUsername = snapshot.key
+						UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
+						votingItems.push(UsersDecodedUsername)
 					})
 
 					votingRef.child("polls").child("active").child(userVotePendingKey).child("items").once("value", function(snapshot)
@@ -1348,15 +1366,17 @@
 							}
 						})
 
-						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").child(message.body).once("value", function(snapshot)
+						var encodedItemName = message.body
+						encodedItemName = encodedItemName.replace(/\./g, "%2E")
+						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").child(encodedItemName).once("value", function(snapshot)
 						{
 
 							if (snapshot.exists())
 							{
 								var VoteData = {}
-								votingRef.child("polls").child("active").child(userVotePendingKey).child("items").child(message.body).once("value", function(snapshot)
+								votingRef.child("polls").child("active").child(userVotePendingKey).child("items").child(encodedItemName).once("value", function(snapshot)
 								{
-									VoteData[message.body] = snapshot.val() + 1
+									VoteData[encodedItemName] = snapshot.val() + 1
 								})
 								votingRef.child("polls").child("active").child(userVotePendingKey).child("items").update(VoteData)
 
@@ -1574,6 +1594,19 @@
 							bot.send([contextMessage], message.from);
 						})
 						break
+
+						case "End a Poll":
+						userRef.update(
+						{
+							context: "end_a_poll"
+						})
+
+						getContextMessage(message, "end_a_poll", function(contextMessage)
+						{
+							bot.send([contextMessage], message.from);
+						})
+						break
+
 						case "🔙 To Admin Actions":
 						userRef.update(
 						{
@@ -1762,6 +1795,69 @@
 							bot.send(contextMessage, message.from)
 						})
 					}
+					break
+
+					case "end_a_poll":
+					var titleMatch = false
+					var pollRef = votingRef.child("polls")
+
+					votingRef.child("polls").child("active").on("child_added", function(snapshot)
+					{
+						if (snapshot.val().title == message.body)
+						{
+							titleMatch = true
+							pollRef = votingRef.child("polls").child("active").child(snapshot.key)
+						}
+					})
+
+					votingRef.child("polls").child("active").once("value", function(snapshot)
+					{
+						if (titleMatch == true)
+						{
+							pollRef.once("value", function(snapshot)
+							{
+									var data = {}
+									data[snapshot.key] = snapshot.val()
+									votingRef.child("polls").child("deactivated").update(data)
+									pollRef.set(null)
+
+									userRef.update(
+									{
+										context: "voting_actions"
+									})
+
+									getContextMessage(message, "voting_actions", function(contextMessage)
+									{
+										bot.send([contextMessage], message.from);
+									})
+
+							})
+						}
+						else
+						{
+							switch (message.body)
+							{
+								case "🔙 To Voting Actions":
+								userRef.update(
+								{
+									context: "voting_actions"
+								})
+
+								getContextMessage(message, "voting_actions", function(contextMessage)
+								{
+									bot.send([contextMessage], message.from);
+								})
+								break
+
+								default:
+								getContextMessage(message, context, function(contextMessage)
+								{
+									bot.send([contextMessage], message.from);
+								})
+								break
+							}
+						}
+					})
 					break
 
 					case "disable_homework_auto_clear":
@@ -2145,9 +2241,15 @@
 					}
 					else
 					{
+						var encodedVoteResponce = message.body
+						encodedVoteResponce = encodedVoteResponce.replace(/\./g, "%2E")
+
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
 						let data = {}
-						data[message.body] = true
-						votingRef.child("pending").child(message.from).child("items").update(data)
+
+						data[encodedVoteResponce] = true
+						votingRef.child("pending").child(usersEncodedUsername).child("items").update(data)
 
 						bot.send(Bot.Message.text("\"" + message.body + "\" added").addResponseKeyboard(["Done", "Cancel"], true), message.from)
 					}
@@ -2308,7 +2410,9 @@
 
 									pollRef.child("items").on("child_added", function(snapshot)
 									{
-										votingResultString = votingResultString + snapshot.key + " - " + snapshot.val() + "\n"
+										var decodedPollResponce = snapshot.key
+										decodedPollResponce = decodedPollResponce.replace(/%2E/g, "\.")
+										votingResultString = votingResultString + decodedPollResponce + " - " + snapshot.val() + "\n"
 									})
 
 									pollRef.child("items").once("value", function(snapshot)
