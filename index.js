@@ -263,7 +263,7 @@
 				break
 
 			case "enable_homework_auto_clear":
-				let EnableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to enable homework auto clear (this happens everyday at 2:00AM)?").addResponseKeyboard(["Yes", "No"])
+				let EnableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to enable homework auto clear? (this happens everyday at 2:00AM)").addResponseKeyboard(["Yes", "No"])
 
 				callback(EnableHomeworkAutoClear)
 				break
@@ -275,7 +275,7 @@
 				break
 
 			case "enable_homework_notifications":
-				let EnableHomeworkNotifications = Bot.Message.text("Are you sure that you want enable homework notifications for everyone (this happens everyday at 3:30PM)?").addResponseKeyboard(["Yes", "No"])
+				let EnableHomeworkNotifications = Bot.Message.text("Are you sure that you want enable homework notifications for everyone? (this happens everyday at 3:30PM)").addResponseKeyboard(["Yes", "No"])
 
 				callback(EnableHomeworkNotifications)
 				break
@@ -321,8 +321,14 @@
 				callback(addPollTitleString)
 				break
 
+			case "ask_make_poll_announcement":
+				let askMakePollAnnouncement = Bot.Message.text("Do you want to send all of the subscribers a notification? (NOTE: ONLY DO THIS IF THE POLL IS IMPORTANT)").addResponseKeyboard(["Yes", "No"])
+
+				callback(askMakePollAnnouncement)
+				break
+
 			case "confirm_create_poll":
-				let ConfirmCreatePollString = Bot.Message.text("Are you sure that you want to create this poll and send a message to eveyone on the subscribed list?").addResponseKeyboard(["Yes", "No"])
+				let ConfirmCreatePollString = Bot.Message.text("Are you sure you want to create this poll?").addResponseKeyboard(["Yes", "No"])
 
 				callback(ConfirmCreatePollString)
 				break
@@ -2215,10 +2221,10 @@
 					{
 						userRef.update(
 						{
-							context: "confirm_create_poll"
+							context: "ask_make_poll_announcement"
 						})
 
-						getContextMessage(message, "confirm_create_poll", function (contextMessage)
+						getContextMessage(message, "ask_make_poll_announcement", function (contextMessage)
 						{
 							bot.send(contextMessage, message.from)
 						})
@@ -2259,6 +2265,16 @@
 
 						votingRef.child("pending").child(message.from).child("title").once("value", function (snapshot)
 						{
+							let makeAnnouncement = false
+
+							var usersEncodedUsername = message.from
+							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+							votingRef.child("pending").child(usersEncodedUsername).child("make_announcement").once("value", function (snapshot)
+							{
+								let makeAnnouncement = snapshot.val()
+							})
+
 							var data = {}
 							data["title"] = snapshot.val()
 							data["from"] = message.from
@@ -2283,20 +2299,24 @@
 
 							usersRef.once("value", function (snapshot)
 							{
-								usersRef.off("child_added")
-								let votingAnnouncementString = Bot.Message.text("A new poll has been created by @" + message.from + " with the question \"" + data["title"] + "\" go cast your vote in the voting menu!").addResponseKeyboard(["Dismiss"])
 
-								bot.broadcast(votingAnnouncementString, subscribers)
-
-								let announcementSentConfirmation = "Your announcement has been sent"
 								userRef.update(
 								{
-									context: "ask_make_poll_announcement"
+									context: "voting_actions"
 								})
 
-								getContextMessage(message, "ask_make_poll_announcement", function (contextMessage)
+								usersRef.off("child_added")
+								var UsersEncodedUsername = message.from
+								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+
+								let votingAnnouncementString = Bot.Message.text("A new poll has been created by @" + message.from + " with the question \"" + data["title"] + "\" go cast your vote in the voting menu!").addResponseKeyboard(["Dismiss"])
+								if (makeAnnouncement)
 								{
-									bot.send([announcementSentConfirmation, contextMessage], message.from)
+									bot.broadcast(votingAnnouncementString, subscribers)
+								}
+								getContextMessage(message, "voting_actions", function (contextMessage)
+								{
+									bot.send(["Poll created", contextMessage], message.from)
 								})
 							})
 						})
@@ -2310,6 +2330,53 @@
 						})
 
 						getContextMessage(message, "voting_actions", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						getContextMessage(message, context, function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
+				case "ask_make_poll_announcement":
+					if (message.body == "Yes")
+					{
+						var UsersEncodedUsername = message.from
+						UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+
+						var data = {}
+						data["make_announcement"] = true
+
+						votingRef.child("pending").child(UsersEncodedUsername).update(data)
+
+						userRef.update(
+						{
+							context: "confirm_create_poll"
+						})
+
+						getContextMessage(message, "confirm_create_poll", function (contextMessage)
+						{
+							bot.send([contextMessage], message.from)
+						})
+					}
+					else if (message.body == "No")
+					{
+						var UsersEncodedUsername = message.from
+						UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+						var data = {}
+						data["make_announcement"] = false
+						votingRef.child("pending").child(UsersEncodedUsername).update(data)
+						userRef.update(
+						{
+							context: "confirm_create_poll"
+						})
+
+						getContextMessage(message, "confirm_create_poll", function (contextMessage)
 						{
 							bot.send(contextMessage, message.from)
 						})
@@ -2460,7 +2527,6 @@
 							let announcementRef = announcementsRef.child("items").push()
 
 							let announcementItems = []
-
 							var announcementData = {}
 							announcementData["title"] = snapshot.val().title
 							announcementData["body"] = snapshot.val().body
