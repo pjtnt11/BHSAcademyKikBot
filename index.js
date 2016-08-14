@@ -289,7 +289,7 @@
 			case "announcements":
 				let announcements = []
 
-				announcementsRef.child("items").orderByChild("negitive_timestamp").limitToLast(5).on("child_added", function (snapshot)
+				announcementsRef.child("items").orderByChild("negitive_timestamp").limitToFirst(5).on("child_added", function (snapshot)
 				{
 					announcements.push(snapshot.val().title)
 				})
@@ -565,6 +565,11 @@
 	bot.onVideoMessage((message) =>
 	{
 
+		var UsersEncodedUsername = message.from
+		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+
+		let userRef = usersRef.child(UsersEncodedUsername)
+
 		userRef.once("value", function (snapshot)
 		{
 			if (!snapshot.exists())
@@ -575,12 +580,36 @@
 
 		message.markRead()
 
+		console.log(message.from + ": (video message) " + message.videoUrl)
+
+		userRef.child("context").once("value", function (snapshot)
+		{
+			getContextMessage(message, snapshot.val(), function (contextMessage)
+			{
+				bot.send(contextMessage, message.from)
+			})
+		})
+	})
+
+	bot.onFriendPickerMessage((message) =>
+	{
+
 		var UsersEncodedUsername = message.from
 		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
 
 		let userRef = usersRef.child(UsersEncodedUsername)
 
-		console.log(message.from + ": (video message) " + message.videoUrl)
+		userRef.once("value", function (snapshot)
+		{
+			if (!snapshot.exists())
+			{
+				createUser(message)
+			}
+		})
+
+		message.markRead()
+
+		console.log(message.from + ": (friend picker message) " + message.picked)
 
 		userRef.child("context").once("value", function (snapshot)
 		{
@@ -594,6 +623,11 @@
 	bot.onScanDataMessage((message) =>
 	{
 
+		var UsersEncodedUsername = message.from
+		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+
+		let userRef = usersRef.child(UsersEncodedUsername)
+
 		userRef.once("value", function (snapshot)
 		{
 			if (!snapshot.exists())
@@ -603,11 +637,6 @@
 		})
 
 		message.markRead()
-
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
-
-		let userRef = usersRef.child(UsersEncodedUsername)
 
 		console.log(message.from + ": (scan data message) " + message.scanData)
 
@@ -623,6 +652,11 @@
 	bot.onStickerMessage((message) =>
 	{
 
+		var UsersEncodedUsername = message.from
+		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+
+		let userRef = usersRef.child(UsersEncodedUsername)
+
 		userRef.once("value", function (snapshot)
 		{
 			if (!snapshot.exists())
@@ -632,11 +666,6 @@
 		})
 
 		message.markRead()
-
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
-
-		let userRef = usersRef.child(UsersEncodedUsername)
 
 		console.log(message.from + ": (sticker message) " + message.stickerUrl)
 
@@ -1227,7 +1256,7 @@
 
 					var announcementFound = false
 
-					announcementsRef.child("items").orderByChild("negitive_timestamp").limitToLast(5).on("child_added", function (snapshot)
+					announcementsRef.child("items").orderByChild("negitive_timestamp").limitToFiirst(5).on("child_added", function (snapshot)
 					{
 						if (snapshot.val().title === message.body)
 						{
@@ -2494,6 +2523,7 @@
 						{
 
 							var UsersEncodedUsername = message.from
+
 							UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
 
 							pollRef.child("voters").child(UsersEncodedUsername).once("value", function (snapshot)
