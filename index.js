@@ -2815,7 +2815,7 @@
 						let suggestRef = suggestComplaintRef.child("suggestions").child("active").push()
 						var timestamp = {}
 						var data = {}
-						timestamp["negitive_timestamp"] = (new Date() / 1000) * -1
+						timestamp["timestamp"] = (new Date() / 1000)
 						suggestRef.update(timestamp)
 
 						suggestComplaintRef.child("pending").child(message.from).child("details").once("value", function (snapshot)
@@ -2878,7 +2878,7 @@
 						let complaintRef = suggestComplaintRef.child("complaints").child("active").push()
 						var timestamp = {}
 						var data = {}
-						timestamp["negitive_timestamp"] = (new Date() / 1000) * -1
+						timestamp["timestamp"] = (new Date() / 1000)
 						complaintRef.update(timestamp)
 
 						suggestComplaintRef.child("pending").child(message.from).child("details").once("value", function (snapshot)
