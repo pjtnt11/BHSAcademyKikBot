@@ -335,7 +335,7 @@
 
 			case "voting":
 				var pollTitles = []
-				votingRef.child("polls").child("active").on("child_added", function (snapshot)
+				votingRef.child("polls").child("active").limitToLast(19).orderByChild("negitive_timestamp").on("child_added", function (snapshot)
 				{
 					pollTitles.push(snapshot.val().title)
 				})
@@ -1811,6 +1811,39 @@
 					{
 						if (titleMatch == true)
 						{
+							let pendingVoters = []
+							pollRef.child("voters").on("child_added", function (snapshot)
+							{
+
+								if (snapshot.val() == "pending")
+								{
+									var UsersDecodedUsername = snapshot.key
+									UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
+									pendingVoters.push(UsersDecodedUsername)
+								}
+							})
+
+							pollRef.child("voters").once("value", function (snapshot)
+							{
+								getContextMessage(message, "voting_actions", function (contextMessage)
+								{
+									if (pendingVoters.length != 0)
+									{
+										bot.broadcast(["Sorry, this poll has been deactivated", contextMessage], pendingVoters)
+									}
+								})
+
+								pendingVoters.forEach(function (userName)
+								{
+									var encodedUsersUsername = userName
+									encodedUsersUsername = encodedUsersUsername.replace(/\./g, "%2E")
+									usersRef.child(encodedUsersUsername).update(
+									{
+										context: "voting_options"
+									})
+								})
+							})
+
 							pollRef.once("value", function (snapshot)
 							{
 								var data = {}
@@ -2256,9 +2289,12 @@
 					if (message.body == "Yes")
 					{
 						let pollRef = votingRef.child("polls").child("active").push()
+						var timestamp = {}
+						var data = {}
+						timestamp["negitive_timestamp"] = (new Date() / 1000) * -1
+						pollRef.update(timestamp)
 						votingRef.child("pending").child(message.from).child("items").on("child_added", function (snapshot)
 						{
-							var data = {}
 							data[snapshot.key] = 0
 							pollRef.child("items").update(data)
 						})
