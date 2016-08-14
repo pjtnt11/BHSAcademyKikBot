@@ -1313,7 +1313,7 @@
 
 					var announcementFound = false
 
-					announcementsRef.child("items").orderByChild("negitive_timestamp").limitToFiirst(5).on("child_added", function (snapshot)
+					announcementsRef.child("items").orderByChild("negitive_timest`amp").limitToFirst(5).on("child_added", function (snapshot)
 					{
 						if (snapshot.val().title === message.body)
 						{
@@ -2776,9 +2776,12 @@
 				case "suggestion":
 					var suggestRef = suggestComplaintRef.child("suggestions")
 
+					var usersEncodedUsername = message.from
+					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
 					if (message.body == "Cancel")
 					{
-						suggestRef.child("pending").child(message.from).set(null)
+						suggestRef.child("pending").child(usersEncodedUsername).set(null)
 						userRef.update(
 						{
 							context: "suggestions_complaints"
@@ -2792,8 +2795,8 @@
 					else
 					{
 						let data = {}
-						data["details"] = message.body
-						suggestRef.child("pending").child(message.from).update(data)
+						data["body"] = message.body
+						suggestRef.child("pending").child(usersEncodedUsername).update(data)
 
 						userRef.update(
 						{
@@ -2810,9 +2813,12 @@
 				case "complaint":
 					var complaintRef = suggestComplaintRef.child("complaints")
 
+					var usersEncodedUsername = message.from
+					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
 					if (message.body == "Cancel")
 					{
-						complaintRef.child("pending").child(message.from).set(null)
+						complaintRef.child("pending").child(usersEncodedUsername).set(null)
 						userRef.update(
 						{
 							context: "suggestions_complaints"
@@ -2826,8 +2832,8 @@
 					else
 					{
 						let data = {}
-						data["details"] = message.body
-						complaintRef.child("pending").child(message.from).update(data)
+						data["body"] = message.body
+						complaintRef.child("pending").child(usersEncodedUsername).update(data)
 
 						userRef.update(
 						{
@@ -2844,27 +2850,24 @@
 				case "confirm_suggest":
 					if (message.body == "Yes")
 					{
-						let suggestRef = suggestComplaintRef.child("suggestions").child("active").push()
-						var timestamp = {}
+						let suggestRef = suggestComplaintRef.child("suggestions").child("items").push()
 						var data = {}
-						timestamp["timestamp"] = (new Date() / 1000)
-						suggestRef.update(timestamp)
 
-						suggestComplaintRef.child("pending").child(message.from).child("details").once("value", function (snapshot)
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+						suggestComplaintRef.child("suggestions").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
 						{
-							var usersEncodedUsername = message.from
-							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-
 							var data = {}
+							data["timestamp"] = (new Date() / 1000)
 							data["suggestion"] = snapshot.val()
 							data["from"] = message.from
 							suggestRef.update(data)
-							suggestComplaintRef.child("pending").child(message.from).set(null)
+
+							suggestComplaintRef.child("suggestions").child("pending").child(usersEncodedUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
-								var UsersEncodedUsername = message.from
-								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
 
 								usersRef.once("value", function (snapshot)
 								{
@@ -2908,27 +2911,23 @@
 				case "confirm_complaint":
 					if (message.body == "Yes")
 					{
-						let complaintRef = suggestComplaintRef.child("complaints").child("active").push()
-						var timestamp = {}
+						let complaintRef = suggestComplaintRef.child("complaints").child("items").push()
 						var data = {}
-						timestamp["timestamp"] = (new Date() / 1000)
-						complaintRef.update(timestamp)
 
-						suggestComplaintRef.child("pending").child(message.from).child("details").once("value", function (snapshot)
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+						suggestComplaintRef.child("complaints").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
 						{
-							var usersEncodedUsername = message.from
-							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-
 							var data = {}
-							data["complaint"] = snapshot.val()
+							data["timestamp"] = (new Date() / 1000)
+							data["body"] = snapshot.val()
 							data["from"] = message.from
 							complaintRef.update(data)
-							suggestComplaintRef.child("pending").child(message.from).set(null)
+							suggestComplaintRef.child("complaints").child("pending").child(usersEncodedUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
-								var UsersEncodedUsername = message.from
-								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
 
 								usersRef.once("value", function (snapshot)
 								{
