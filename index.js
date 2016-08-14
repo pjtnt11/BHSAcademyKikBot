@@ -28,6 +28,7 @@
 	var usersRef = database.ref("/users")
 	var announcementsRef = database.ref("/announcements")
 	var votingRef = database.ref("/voting")
+	var suggestComplaintRef = database.ref("/suggestComplaint")
 
 	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📲 Complaints/Suggestions"]
 	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📲 Complaints/Suggestions", "📊 Stats", "🔒 Admin Actions"]
@@ -430,8 +431,27 @@
 				break
 
 			case "suggestions_complaints":
-				let SuggestActionsString = Bot.Message.text("Would you like to submit a suggestion or a complaint?").addResponseKeyboard(["Suggestion", "Complaint", "🏠 Back to Home"])
-				callback(VotingActionsString)
+				let SuggestComplaintActionsString = Bot.Message.text("Would you like to submit a suggestion or a complaint?").addResponseKeyboard(["Suggestion", "Complaint", "🏠 Back to Home"])
+
+				callback(SuggestComplaintActionsString)
+				break
+
+			case "suggestions":
+				let SuggestActionsString = Bot.Message.text("What is your suggestion?").addResponseKeyboard(["Cancel"], true)
+
+				callback(SuggestActionsString)
+				break
+
+			case "complaints":
+				let ComplaintActionsString = Bot.Message.text("What is your complaint?").addResponseKeyboard(["Cancel"], true)
+
+				callback(ComplaintActionsString)
+				break
+
+			case "confirm_suggest_complaint":
+				let ConfirmCreateSuggestComplaintString = Bot.Message.text("Are you sure this is all you want to say?").addResponseKeyboard(["Yes", "No"])
+
+				callback(ConfirmCreateSuggestComplaintString)
 				break
 		}
 	}
@@ -2710,6 +2730,200 @@
 						getContextMessage(message, "admin_actions", function (contextMessage)
 						{
 							bot.send([contextMessage], message.from)
+						})
+					}
+					else
+					{
+						getContextMessage(message, context, function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
+				case "suggestion":
+					var suggestRef = suggestComplaintRef.child("suggestions")
+
+					if (message.body == "Cancel")
+					{
+						suggestRef.child("pending").child(message.from).set(null)
+						userRef.update(
+							{
+								context: "suggestions_complaints"
+							})
+
+							getContextMessage(message, "suggestions_complaints", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+						}
+						else
+						{
+							let data = {}
+							data["details"] = message.body
+							suggestRef.child("pending").child(message.from).update(data)
+
+							userRef.update(
+							{
+								context: "confirm_suggest"
+							})
+
+							getContextMessage(message, "confirm_suggest_complaint", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+						}
+					break
+
+				case "complaint":
+					var complaintRef = suggestComplaintRef.child("complaints")
+
+					if (message.body == "Cancel")
+					{
+						complaintRef.child("pending").child(message.from).set(null)
+						userRef.update(
+							{
+								context: "suggestions_complaints"
+							})
+
+							getContextMessage(message, "suggestions_complaints", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+						}
+					else
+					{
+						let data = {}
+						data["details"] = message.body
+						complaintRef.child("pending").child(message.from).update(data)
+
+						userRef.update(
+							{
+								context: "confirm_complaint"
+							})
+
+							getContextMessage(message, "confirm_suggest_complaint", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+						}
+					break
+
+				case "confirm_suggest":
+					if (message.body == "Yes")
+					{
+						let suggestRef = suggestComplaintRef.child("suggestions").child("active").push()
+						var timestamp = {}
+						var data = {}
+						timestamp["negitive_timestamp"] = (new Date() / 1000) * -1
+						suggestRef.update(timestamp)
+
+						suggestComplaintRef.child("pending").child(message.from).child("details").once("value", function (snapshot)
+						{
+							var usersEncodedUsername = message.from
+							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+							var data = {}
+							data["suggestion"] = snapshot.val()
+							data["from"] = message.from
+							suggestRef.update(data)
+							suggestComplaintRef.child("pending").child(message.from).set(null)
+
+							usersRef.on("child_added", function (snapshot)
+							{
+								var UsersEncodedUsername = message.from
+								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+
+							usersRef.once("value", function (snapshot)
+							{
+
+								userRef.update(
+								{
+									context: "home"
+								})
+
+								usersRef.off("child_added")
+								getContextMessage(message, "home", function (contextMessage)
+								{
+									bot.send(["Thanks for the suggestion! We'll review it and hopefully add it as soon as we can.", contextMessage], message.from)
+								})
+							})
+						})
+					}
+					else if (message.body == "No")
+					{
+						suggestComplaintRef.child("pending").child(message.from).set(null)
+						userRef.update(
+						{
+							context: "suggestion"
+						})
+
+						getContextMessage(message, "suggestion", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						getContextMessage(message, context, function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
+				case "confirm_complaint":
+					if (message.body == "Yes")
+					{
+						let complaintRef = suggestComplaintRef.child("complaints").child("active").push()
+						var timestamp = {}
+						var data = {}
+						timestamp["negitive_timestamp"] = (new Date() / 1000) * -1
+						complaintRef.update(timestamp)
+
+						suggestComplaintRef.child("pending").child(message.from).child("details").once("value", function (snapshot)
+						{
+							var usersEncodedUsername = message.from
+							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+							var data = {}
+							data["complaint"] = snapshot.val()
+							data["from"] = message.from
+							complaintRef.update(data)
+							suggestComplaintRef.child("pending").child(message.from).set(null)
+
+							usersRef.on("child_added", function (snapshot)
+							{
+								var UsersEncodedUsername = message.from
+								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+
+							usersRef.once("value", function (snapshot)
+							{
+
+								userRef.update(
+								{
+									context: "home"
+								})
+
+								usersRef.off("child_added")
+								getContextMessage(message, "home", function (contextMessage)
+								{
+									bot.send(["Sorry about that, we'll get to fixing it right away!", contextMessage], message.from)
+								})
+							})
+						})
+					}
+					else if (message.body == "No")
+					{
+						suggestComplaintRef.child("pending").child(message.from).set(null)
+						userRef.update(
+						{
+							context: "complaint"
+						})
+
+						getContextMessage(message, "complaint", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
 						})
 					}
 					else
