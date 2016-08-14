@@ -436,13 +436,13 @@
 				callback(SuggestComplaintActionsString)
 				break
 
-			case "suggestions":
+			case "suggestion":
 				let SuggestActionsString = Bot.Message.text("What is your suggestion?").addResponseKeyboard(["Cancel"], true)
 
 				callback(SuggestActionsString)
 				break
 
-			case "complaints":
+			case "complaint":
 				let ComplaintActionsString = Bot.Message.text("What is your complaint?").addResponseKeyboard(["Cancel"], true)
 
 				callback(ComplaintActionsString)
@@ -989,14 +989,14 @@
 						case "complaints":
 						case "📲":
 							userRef.update(
-								{
-									context: "suggestions_complaints"
-								})
+							{
+								context: "suggestions_complaints"
+							})
 
 							getContextMessage(message, "suggestions_complaints", function (contextMessage)
-								{
-									bot.send(contextMessage, message.from)
-								})
+							{
+								bot.send(contextMessage, message.from)
+							})
 							break
 
 						default:
@@ -1701,46 +1701,48 @@
 								bot.send([contextMessage], message.from)
 							})
 							break
+					}
+					break
 
-						case "suggestions_complaints":
-							switch (message.body)
+				case "suggestions_complaints":
+					switch (message.body)
+					{
+
+						case "Suggestion":
+							userRef.update(
 							{
+								context: "suggestion"
+							})
 
-								case "Suggestion":
-									userRef.update(
-									{
-										context: "suggestion"
-									})
+							getContextMessage(message, "suggestion", function (contextMessage)
+							{
+								bot.send([contextMessage], message.from)
+							})
+							break
 
-									getContextMessage(message, "suggestion", function (contextMessage)
-									{
-										bot.send([contextMessage], message.from)
-									})
-									break
+						case "Complaint":
+							userRef.update(
+							{
+								context: "complaint"
+							})
 
-								case "Complaint":
-									userRef.update(
-									{
-										context: "complaint"
-									})
+							getContextMessage(message, "complaint", function (contextMessage)
+							{
+								bot.send([contextMessage], message.from)
+							})
+							break
 
-									getContextMessage(message, "complaint", function (contextMessage)
-									{
-										bot.send([contextMessage], message.from)
-									})
-									break
+						case "🏠 Back to Home":
+							userRef.update(
+							{
+								context: "home"
+							})
 
-								case "🏠 Back to Home":
-									userRef.update(
-									{
-										context: "home"
-									})
-
-									getContextMessage(message, "home", function (contextMessage)
-									{
-										bot.send([contextMessage], message.from)
-									})
-									break
+							getContextMessage(message, "home", function (contextMessage)
+							{
+								bot.send([contextMessage], message.from)
+							})
+							break
 
 						default:
 							getContextMessage(message, context, function (contextMessage)
@@ -2778,31 +2780,31 @@
 					{
 						suggestRef.child("pending").child(message.from).set(null)
 						userRef.update(
-							{
-								context: "suggestions_complaints"
-							})
-
-							getContextMessage(message, "suggestions_complaints", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-						}
-						else
 						{
-							let data = {}
-							data["details"] = message.body
-							suggestRef.child("pending").child(message.from).update(data)
+							context: "suggestions_complaints"
+						})
 
-							userRef.update(
-							{
-								context: "confirm_suggest"
-							})
+						getContextMessage(message, "suggestions_complaints", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						let data = {}
+						data["details"] = message.body
+						suggestRef.child("pending").child(message.from).update(data)
 
-							getContextMessage(message, "confirm_suggest_complaint", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-						}
+						userRef.update(
+						{
+							context: "confirm_suggest"
+						})
+
+						getContextMessage(message, "confirm_suggest_complaint", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
 					break
 
 				case "complaint":
@@ -2812,15 +2814,15 @@
 					{
 						complaintRef.child("pending").child(message.from).set(null)
 						userRef.update(
-							{
-								context: "suggestions_complaints"
-							})
+						{
+							context: "suggestions_complaints"
+						})
 
-							getContextMessage(message, "suggestions_complaints", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-						}
+						getContextMessage(message, "suggestions_complaints", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
 					else
 					{
 						let data = {}
@@ -2828,15 +2830,15 @@
 						complaintRef.child("pending").child(message.from).update(data)
 
 						userRef.update(
-							{
-								context: "confirm_complaint"
-							})
+						{
+							context: "confirm_complaint"
+						})
 
-							getContextMessage(message, "confirm_suggest_complaint", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-						}
+						getContextMessage(message, "confirm_suggest_complaint", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
 					break
 
 				case "confirm_suggest":
@@ -2864,18 +2866,19 @@
 								var UsersEncodedUsername = message.from
 								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
 
-							usersRef.once("value", function (snapshot)
-							{
-
-								userRef.update(
+								usersRef.once("value", function (snapshot)
 								{
-									context: "home"
-								})
 
-								usersRef.off("child_added")
-								getContextMessage(message, "home", function (contextMessage)
-								{
-									bot.send(["Thanks for the suggestion! We'll review it and hopefully add it as soon as we can.", contextMessage], message.from)
+									userRef.update(
+									{
+										context: "home"
+									})
+
+									usersRef.off("child_added")
+									getContextMessage(message, "home", function (contextMessage)
+									{
+										bot.send(["Thanks for the suggestion! We'll review it and hopefully add it as soon as we can.", contextMessage], message.from)
+									})
 								})
 							})
 						})
@@ -2927,18 +2930,19 @@
 								var UsersEncodedUsername = message.from
 								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
 
-							usersRef.once("value", function (snapshot)
-							{
-
-								userRef.update(
+								usersRef.once("value", function (snapshot)
 								{
-									context: "home"
-								})
 
-								usersRef.off("child_added")
-								getContextMessage(message, "home", function (contextMessage)
-								{
-									bot.send(["Sorry about that, we'll get to fixing it right away!", contextMessage], message.from)
+									userRef.update(
+									{
+										context: "home"
+									})
+
+									usersRef.off("child_added")
+									getContextMessage(message, "home", function (contextMessage)
+									{
+										bot.send(["Sorry about that, we'll get to fixing it right away!", contextMessage], message.from)
+									})
 								})
 							})
 						})
