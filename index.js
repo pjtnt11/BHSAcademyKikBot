@@ -29,8 +29,8 @@
 	var announcementsRef = database.ref("/announcements")
 	var votingRef = database.ref("/voting")
 
-	let userSuggestedResponces = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings"]
-	let adminSuggestedResponces = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📊 Stats", "🔒 Admin Actions"]
+	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📲 Complaints/Suggestions"]
+	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📲 Complaints/Suggestions", "📊 Stats", "🔒 Admin Actions"]
 
 	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function ()
 	{
@@ -119,11 +119,11 @@
 					{
 						if (isAdmin)
 						{
-							callback(homeContextMessage.addResponseKeyboard(adminSuggestedResponces))
+							callback(homeContextMessage.addResponseKeyboard(adminSuggestedResponses))
 						}
 						else
 						{
-							callback(homeContextMessage.addResponseKeyboard(userSuggestedResponces))
+							callback(homeContextMessage.addResponseKeyboard(userSuggestedResponses))
 						}
 					})
 				}
@@ -304,7 +304,7 @@
 				break
 
 			case "voting_actions":
-				let VotingActionsString = Bot.Message.text("What would you like to do concerning voting").addResponseKeyboard(["Create a poll", "End a poll", "🔙 To Admin Actions"])
+				let VotingActionsString = Bot.Message.text("What would you like to do concerning voting?").addResponseKeyboard(["Create a poll", "End a poll", "🔙 To Admin Actions"])
 
 				callback(VotingActionsString)
 				break
@@ -427,6 +427,11 @@
 						})
 					}
 				})
+				break
+
+			case "suggestions_complaints":
+				let SuggestActionsString = Bot.Message.text("Would you like to submit a suggestion or a complaint?").addResponseKeyboard(["Suggestion", "Complaint", "🏠 Back to Home"])
+				callback(VotingActionsString)
 				break
 		}
 	}
@@ -911,6 +916,38 @@
 									}
 								})
 							})
+							break
+
+						case "📲 Complaints/Suggestions":
+						case "📲 complaints/suggestions":
+						case "📲 complaints/Suggestions":
+						case "📲 Complaints/suggestions":
+						case "📲 Suggestions/Complaints":
+						case "📲 suggestions/complaints":
+						case "📲 Suggestions/complaints":
+						case "📲 suggestions/Complaints":
+						case "Complaints/Suggestions":
+						case "complaints/suggestions":
+						case "complaints/Suggestions":
+						case "Complaints/suggestions":
+						case "Suggestions/Complaints":
+						case "suggestions/complaints":
+						case "Suggestions/complaints":
+						case "suggestions/Complaints":
+						case "Suggestions":
+						case "suggestions":
+						case "Complaints":
+						case "complaints":
+						case "📲":
+							userRef.update(
+								{
+									context: "suggestions_complaints"
+								})
+
+							getContextMessage(message, "suggestions_complaints", function (contextMessage)
+								{
+									bot.send(contextMessage, message.from)
+								})
 							break
 
 						default:
@@ -1615,6 +1652,46 @@
 								bot.send([contextMessage], message.from)
 							})
 							break
+
+						case "suggestions_complaints":
+							switch (message.body)
+							{
+
+								case "Suggestion":
+									userRef.update(
+									{
+										context: "suggestion"
+									})
+
+									getContextMessage(message, "suggestion", function (contextMessage)
+									{
+										bot.send([contextMessage], message.from)
+									})
+									break
+
+								case "Complaint":
+									userRef.update(
+									{
+										context: "complaint"
+									})
+
+									getContextMessage(message, "complaint", function (contextMessage)
+									{
+										bot.send([contextMessage], message.from)
+									})
+									break
+
+								case "🏠 Back to Home":
+									userRef.update(
+									{
+										context: "home"
+									})
+
+									getContextMessage(message, "home", function (contextMessage)
+									{
+										bot.send([contextMessage], message.from)
+									})
+									break
 
 						default:
 							getContextMessage(message, context, function (contextMessage)
