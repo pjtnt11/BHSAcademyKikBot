@@ -1,13 +1,12 @@
-	'use strict';
+	'use strict'
 
 	var util = require('util')
 	var http = require('http')
 	var Bot = require('@kikinteractive/kik')
 	var firebase = require('firebase')
 	var schedule = require('node-schedule')
-	var moment = require('moment');
+	var moment = require('moment')
 
-	// Configure the bot API endpoint, details for your bot
 	let bot = new Bot(
 	{
 		username: 'bhsacademybot',
@@ -22,15 +21,15 @@
 	{
 		databaseURL: "https://bhs-academy-kik-bot.firebaseio.com/",
 		serviceAccount: "/home/ec2-user/BHSAcademyBot/serviceAccountCredentials.json"
-	});
+	})
 
-	var database = firebase.database();
-	var homeworkRef = database.ref("/homework");
-	var usersRef = database.ref("/users");
+	var database = firebase.database()
+	var homeworkRef = database.ref("/homework")
+	var usersRef = database.ref("/users")
 	var announcementsRef = database.ref("/announcements")
 	var votingRef = database.ref("/voting")
 
-	let userSuggestedResponces = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings"];
+	let userSuggestedResponces = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings"]
 	let adminSuggestedResponces = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📊 Stats", "🔒 Admin Actions"]
 
 	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function ()
@@ -46,14 +45,13 @@
 
 				users.push(UsersDecodedUsername)
 			}
-		});
+		})
 
 		usersRef.once("value", function (snapshot)
 		{
 			usersRef.off("child_added")
 			getHomeworkString(function (homework)
 			{
-
 				homeworkRef.child("notifications_enabled").once("value", function (snapshot)
 				{
 					if (snapshot.val() == true)
@@ -63,11 +61,9 @@
 						console.log("Daily homework notification sent to " + users.length + "users")
 					}
 				})
-
-
 			})
-		});
-	});
+		})
+	})
 
 	var clearHomeworkSchedule = schedule.scheduleJob('0 2 * * *', function ()
 	{
@@ -76,10 +72,10 @@
 			if (snapshot.val() == true)
 			{
 				homeworkRef.child("items").set(null)
+				console.log("Homework has been auto cleared")
 			}
 		})
 	})
-
 
 	function createUser(message, callback)
 	{
@@ -96,14 +92,13 @@
 			subscribed: true
 		}
 
-		usersRef.update(data,
-			function (error)
+		usersRef.update(data, function (error)
+		{
+			if (typeof callback === 'function')
 			{
-				if (typeof callback === 'function')
-				{
-					callback(error)
-				}
-			});
+				callback(error)
+			}
+		})
 	}
 
 	function getContextMessage(message, context, callback)
@@ -130,7 +125,7 @@
 						{
 							callback(homeContextMessage.addResponseKeyboard(userSuggestedResponces))
 						}
-					});
+					})
 				}
 				else
 				{
@@ -139,7 +134,7 @@
 				break
 
 			case "settings":
-				let settingsString = Bot.Message.text("What setting would you like to change?")
+				let settingsString = Bot.Message.text("Which setting would you like to change?")
 
 				userRef.child("subscribed").once("value", function (snapshot)
 				{
@@ -151,7 +146,7 @@
 					{
 						callback(settingsString.addResponseKeyboard(["Subscribe", "Cancel"]), message.from)
 					}
-				});
+				})
 				break
 
 			case "admin_actions":
@@ -159,7 +154,7 @@
 
 				adminCheck(message, function (is_admin)
 				{
-					callback(adminActionsString.addResponseKeyboard(["Homework", "Voting", "Make An Announcement", "🔙 To Home"]), message.from)
+					callback(adminActionsString.addResponseKeyboard(["Homework", "Voting", "Make an announcement", "🏠 Back to home"]), message.from)
 				})
 				break
 
@@ -177,7 +172,7 @@
 
 			case "remove_homework_item":
 				var homeworkClasses = []
-				var removeHomeworkItemString = Bot.Message.text("What homework item would you like to remove?")
+				var removeHomeworkItemString = Bot.Message.text("Which homework item would you like to remove?")
 
 				homeworkRef.child("items").on("child_added", function (snapshot)
 				{
@@ -194,18 +189,18 @@
 				break
 
 			case "confirm_add_homework_item":
-				let addHomeworkItemConfirmationString = Bot.Message.text("There is already homework registered for that class today. Are you sure you want to overwrite it?").addResponseKeyboard(["Yes", "No"])
+				let addHomeworkItemConfirmationString = Bot.Message.text("There is already homework registered for that class. Are you sure you want to overwrite it?").addResponseKeyboard(["Yes", "No"])
 				callback(addHomeworkItemConfirmationString)
 				break
 
 			case "make_an_announcement":
-				let makeAnAnnouncementString = Bot.Message.text("What is the title of the announcement you would like to make?").addResponseKeyboard(["Cancel"], true)
+				let makeAnAnnouncementString = Bot.Message.text("What is the title of the announcement that you would like to make?").addResponseKeyboard(["Cancel"], true)
 
 				callback(makeAnAnnouncementString)
 				break
 
 			case "add_announcement_body":
-				let addAnnouncementBodyString = Bot.Message.text("What is the body of the announcement?").addResponseKeyboard(["Cancel"], true)
+				let addAnnouncementBodyString = Bot.Message.text("What is the body of your announcement?").addResponseKeyboard(["Cancel"], true)
 
 				callback(addAnnouncementBodyString)
 				break
@@ -217,7 +212,7 @@
 				break
 
 			case "confirm_make_announcement":
-				let makeAnnouncementConfirmationString = Bot.Message.text("Are you sure that you want to make this announcement?").addResponseKeyboard(["Yes", "No"])
+				let makeAnnouncementConfirmationString = Bot.Message.text("Are you sure that you want to create this announcement and send a message to eveyone on the subscribed list?").addResponseKeyboard(["Yes", "No"])
 
 				callback(makeAnnouncementConfirmationString)
 				break
@@ -229,32 +224,32 @@
 				break
 
 			case "homework_actions":
-				var homeworkActionsList = ["Show Homework", "Add Homework Item", "Remove Homework Item", "Manually Clear Homework"]
+				var homeworkActionsList = ["Show homework", "Add homework item", "Remove homework item", "Manually clear homework"]
 
 				homeworkRef.child("auto_clear_enabled").once("value", function (snapshot)
 				{
 					if (snapshot.val() == true)
 					{
-						homeworkActionsList.push("Disable Homework Auto Clear")
+						homeworkActionsList.push("Disable homework auto clear")
 					}
 					else
 					{
-						homeworkActionsList.push("Enable Homework Auto Clear")
+						homeworkActionsList.push("Enable homework auto clear")
 					}
 
 					homeworkRef.child("notifications_enabled").once("value", function (snapshot)
 					{
 						if (snapshot.val() == true)
 						{
-							homeworkActionsList.push("Disable Homework Notifications")
+							homeworkActionsList.push("Disable homework notifications")
 						}
 						else
 						{
-							homeworkActionsList.push("Enable Homework Notifications")
+							homeworkActionsList.push("Enable homework notifications")
 						}
 
 						homeworkActionsList.push("🔙 To Admin Actions")
-						let homeworkActionsString = Bot.Message.text("What would you like to change about homework?").addResponseKeyboard(homeworkActionsList)
+						let homeworkActionsString = Bot.Message.text("What would you like to do concerning homework?").addResponseKeyboard(homeworkActionsList)
 
 						callback(homeworkActionsString)
 					})
@@ -262,13 +257,13 @@
 				break
 
 			case "clear_homework":
-				let clearHomeworkString = Bot.Message.text("Are you sure that you want to clear ALL of the homework currently entered?").addResponseKeyboard(["Yes", "No"])
+				let clearHomeworkString = Bot.Message.text("Are you sure that you want to clear ALL of the currently registered homework?").addResponseKeyboard(["Yes", "No"])
 
 				callback(clearHomeworkString)
 				break
 
 			case "enable_homework_auto_clear":
-				let EnableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to enable homework auto clear (everyday at 2:00AM)?").addResponseKeyboard(["Yes", "No"])
+				let EnableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to enable homework auto clear (this happens everyday at 2:00AM)?").addResponseKeyboard(["Yes", "No"])
 
 				callback(EnableHomeworkAutoClear)
 				break
@@ -280,7 +275,7 @@
 				break
 
 			case "enable_homework_notifications":
-				let EnableHomeworkNotifications = Bot.Message.text("Are you sure that you want enable homework notifications for everyone (everyday at 3:30PM)?").addResponseKeyboard(["Yes", "No"])
+				let EnableHomeworkNotifications = Bot.Message.text("Are you sure that you want enable homework notifications for everyone (this happens everyday at 3:30PM)?").addResponseKeyboard(["Yes", "No"])
 
 				callback(EnableHomeworkNotifications)
 				break
@@ -302,32 +297,32 @@
 				announcementsRef.child("items").once("value", function (snapshot)
 				{
 					usersRef.off("child_added")
-					announcements.push("🔙 To Home")
-					let announcementsString = Bot.Message.text("Here are the last 5 announcements:").addResponseKeyboard(announcements)
+					announcements.push("🏠 Back to home")
+					let announcementsString = Bot.Message.text("Here are the last 5 announcements. Tap one to get information on it").addResponseKeyboard(announcements)
 					callback(announcementsString)
 				})
 				break
 
 			case "voting_actions":
-				let VotingActionsString = Bot.Message.text("What what would you like to do with voting").addResponseKeyboard(["Create a Poll", "End a Poll", "🔙 To Admin Actions"])
+				let VotingActionsString = Bot.Message.text("What would you like to do concerning voting").addResponseKeyboard(["Create a poll", "End a poll", "🔙 To Admin Actions"])
 
 				callback(VotingActionsString)
 				break
 
 			case "create_a_poll":
-				let createAPollString = Bot.Message.text("Send me all the items that you would like people to be able to vote for in individual texts. Text \"Done\" when you have finnished").addResponseKeyboard(["Cancel"], true)
+				let createAPollString = Bot.Message.text("Send me all the votable items that you would lke to add to this poll in individual texts and end me \"Done\" when you have finished").addResponseKeyboard(["Cancel"], true)
 
 				callback(createAPollString)
 				break
 
 			case "add_poll_title":
-				let addPollTitleString = Bot.Message.text("What is the title of this  poll?").addResponseKeyboard(["Cancel"], true)
+				let addPollTitleString = Bot.Message.text("What is the title of this poll?").addResponseKeyboard(["Cancel"], true)
 
 				callback(addPollTitleString)
 				break
 
 			case "confirm_create_poll":
-				let ConfirmCreatePollString = Bot.Message.text("Are you sure that you want to create this poll (and send a notification to everyone about it)?").addResponseKeyboard(["Yes", "No"])
+				let ConfirmCreatePollString = Bot.Message.text("Are you sure that you want to create this poll and send a message to eveyone on the subscribed list?").addResponseKeyboard(["Yes", "No"])
 
 				callback(ConfirmCreatePollString)
 				break
@@ -342,14 +337,14 @@
 				votingRef.child("polls").child("active").once("value", function (snapshot)
 				{
 					pollTitles.push("🔙 To Voting Options")
-					let votingString = Bot.Message.text("Here are the current active polls. Click one of them to vote.").addResponseKeyboard(pollTitles)
+					let votingString = Bot.Message.text("Here are the current active polls. Click one of them to vote").addResponseKeyboard(pollTitles)
 
 					callback(votingString)
 				})
 				break
 
 			case "voting_options":
-				let votingOptionsString = Bot.Message.text("What do you want to do with voting?").addResponseKeyboard(["Vote for a poll", "View poll results", "🔙 To Home"])
+				let votingOptionsString = Bot.Message.text("What do you want to do concerning voting?").addResponseKeyboard(["Vote for a poll", "View poll results", "🏠 Back to home"])
 
 				callback(votingOptionsString)
 				break
@@ -364,7 +359,7 @@
 				votingRef.child("polls").child("active").once("value", function (snapshot)
 				{
 					pollTitles.push("🔙 To Voting Actions")
-					let endVotingString = Bot.Message.text("Here are the current active polls. Click one of them to stop taking responses. (Note: You will no longer be able to view responses unless you ask @pjtnt11)").addResponseKeyboard(pollTitles)
+					let endVotingString = Bot.Message.text("Here are the current active polls. Click one of them to stop taking responses").addResponseKeyboard(pollTitles)
 
 					callback(endVotingString)
 				})
@@ -382,7 +377,7 @@
 				votingRef.child("polls").child("active").once("value", function (snapshot)
 				{
 					activePolls.push("🔙 To Voting Options")
-					let viewActivePollsString = Bot.Message.text("What poll would you like to view the results for?").addResponseKeyboard(activePolls)
+					let viewActivePollsString = Bot.Message.text("Which poll would you like to view the results for?").addResponseKeyboard(activePolls)
 
 					callback(viewActivePollsString)
 				})
@@ -420,7 +415,7 @@
 						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").once("value", function (snapshot)
 						{
 							votingItems.push("Cancel")
-							let votingItemsString = Bot.Message.text("Choose what item you would like to vote for (Note: you can not change this once you have voted)").addResponseKeyboard(votingItems)
+							let votingItemsString = Bot.Message.text("Choose which item you would like to vote for (Note: you can not change this)").addResponseKeyboard(votingItems)
 
 							callback(votingItemsString)
 						})
@@ -457,7 +452,7 @@
 		userRef.child("is_admin").once("value", function (snapshot)
 		{
 			callback(snapshot.val())
-		});
+		})
 	}
 
 
@@ -472,7 +467,7 @@
 			{
 				homeworkString = homeworkString + snapshot.key + ": " + snapshot.val() + "\n\n"
 			}
-		});
+		})
 
 		homeworkRef.child("items").once("value", function (snapshot)
 		{
@@ -483,10 +478,10 @@
 			}
 			else
 			{
-				homeworkString = "There is no registered homework for today."
+				homeworkString = "There is no registered homework for today"
 				callback(homeworkString)
 			}
-		});
+		})
 	}
 
 	bot.onStartChattingMessage((message) =>
@@ -499,7 +494,7 @@
 
 		let userRef = usersRef.child(UsersEncodedUsername)
 
-		let sendingMessage = Bot.Message.text("Welcome to the Bartlett High School Academy Kik Bot! This bot was created by @pjtnt11 (Patrick Stephen)\. To learn ")
+		let sendingMessage = Bot.Message.text("Welcome to the Bartlett High School Academy Kik Bot!\n\nWith this bot you will be able to vote on current topics, receive daily homework information and get notified of announcements.\n\nThis bot was created from scratch by Patrick Stephen so if you have any questions, contact him at @pjtnt11")
 
 		createUser(message, function (error)
 		{
@@ -510,13 +505,13 @@
 					bot.send([sendingMessage, contextMessage], message.from)
 				})
 			}
-		});
-	});
+		})
+	})
 
 	bot.onPictureMessage((message) =>
 	{
 
-		message.markRead();
+		message.markRead()
 
 		console.log(message.from + ": (picture message) " + message.picUrl)
 
@@ -572,7 +567,7 @@
 			}
 		})
 
-		message.markRead();
+		message.markRead()
 
 		var UsersEncodedUsername = message.from
 		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
@@ -601,7 +596,7 @@
 			}
 		})
 
-		message.markRead();
+		message.markRead()
 
 		var UsersEncodedUsername = message.from
 		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
@@ -630,7 +625,7 @@
 			}
 		})
 
-		message.markRead();
+		message.markRead()
 
 		var UsersEncodedUsername = message.from
 		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
@@ -654,7 +649,7 @@
 
 		if (message.body != "")
 		{
-			message.markRead();
+			message.markRead()
 		}
 
 		var UsersEncodedUsername = message.from
@@ -695,7 +690,7 @@
 
 						case "":
 							message.ignore()
-							break;
+							break
 
 						case "homework":
 						case "Homework":
@@ -708,15 +703,15 @@
 								{
 									if (contextMessage != null)
 									{
-										message.reply([Bot.Message.text(homeworkString), contextMessage]);
+										message.reply([Bot.Message.text(homeworkString), contextMessage])
 									}
 									else
 									{
-										message.reply([Bot.Message.text(homeworkString)]);
+										message.reply([Bot.Message.text(homeworkString)])
 									}
-								});
-							});
-							break;
+								})
+							})
+							break
 
 						case "admins":
 						case "Admins":
@@ -731,26 +726,26 @@
 								{
 									adminsString = adminsString + "@" + snapshot.key + "\n"
 								}
-							});
+							})
 
 							usersRef.once("value", function (snapshot)
 							{
 								usersRef.off("child_added")
-								adminsString = adminsString + "\n" + "Also, @pjtnt11 is the owner and creator of the bot."
+								adminsString = adminsString + "\n" + "Also, @pjtnt11 is the owner and creator of the bot"
 
 								getContextMessage(message, context, function (contextMessage)
 								{
 									if (contextMessage != null)
 									{
-										message.reply([Bot.Message.text(adminsString), contextMessage]);
+										message.reply([Bot.Message.text(adminsString), contextMessage])
 									}
 									else
 									{
-										message.reply([Bot.Message.text(adminsString)]);
+										message.reply([Bot.Message.text(adminsString)])
 									}
 								})
 							})
-							break;
+							break
 
 						case "settings":
 						case "Settings":
@@ -766,7 +761,7 @@
 							{
 								bot.send(contextMessage, message.from)
 							})
-							break;
+							break
 
 
 
@@ -875,9 +870,8 @@
 							break
 
 						case "📊 Stats":
+						case "Stats":
 						case "stats":
-
-
 							var numRegisteredUsers = 0
 							var numSubscribedUsers = 0
 							var numAdmins = 0
@@ -897,7 +891,7 @@
 							usersRef.once("value", function (snapshot)
 							{
 								numRegisteredUsers = snapshot.numChildren()
-								let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins.")
+								let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins")
 
 								getContextMessage(message, "home", function (contextMessage)
 								{
@@ -922,13 +916,13 @@
 									bot.send(contextMessage, message.from)
 								}
 							})
-							break;
+							break
 					}
 					///////////////////////////////
 					// END MESSAGE OPTIONS
 					///////////////////////////////
 
-					break;
+					break
 					///////////////////////////////
 					// END "HOME" CONTEXT
 					///////////////////////////////
@@ -975,22 +969,22 @@
 									getContextMessage(message, "home", function (contextMessage)
 									{
 										bot.send([subscribeErrorText, contextMessage], message.from)
-									});
+									})
 								}
 								else
 								{
 									userRef.update(
 									{
 										subscribed: true
-									});
+									})
 
 									getContextMessage(message, "home", function (contextMessage)
 									{
 										bot.send([subscribeSuccessText, contextMessage], message.from)
-									});
+									})
 								}
 							})
-							break;
+							break
 
 						case "unsubscribe":
 						case "Unsubscribe":
@@ -1017,14 +1011,14 @@
 										{
 											bot.send([unsubscribeErrorText], message.from)
 										}
-									});
+									})
 								}
 								else
 								{
 									userRef.update(
 									{
 										subscribed: false
-									});
+									})
 									getContextMessage(message, "home", function (contextMessage)
 									{
 										if (contextMessage !== null)
@@ -1035,10 +1029,10 @@
 										{
 											bot.send([unsubscribeSuccessText], message.from)
 										}
-									});
+									})
 								}
 							})
-							break;
+							break
 
 						case "cancel":
 						case "Cancel":
@@ -1063,7 +1057,7 @@
 							break
 					}
 
-					break;
+					break
 					///////////////////////////////
 					// END "SETTINGS" CONTEXT
 					///////////////////////////////
@@ -1078,7 +1072,7 @@
 						case "back":
 						case "Back":
 						case "🔙":
-						case "🔙 To Home":
+						case "🏠 Back to home":
 							userRef.update(
 							{
 								context: "home"
@@ -1116,8 +1110,7 @@
 							})
 							break
 
-						case "Make An Announcement":
-							let makeAnAnnouncementNoteString = "IMPORTANT INFORMATION:\n\nPlease do not spam this feature. If too many announsemnts are sent in a day then the bot may not be able to talk with anyone for up to 24 hours"
+						case "Make an announcement":
 
 							userRef.update(
 							{
@@ -1126,7 +1119,7 @@
 
 							getContextMessage(message, "make_an_announcement", function (contextMessage)
 							{
-								bot.send([makeAnAnnouncementNoteString, contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
@@ -1179,7 +1172,7 @@
 
 									getContextMessage(message, "vote", function (contextMessage)
 									{
-										bot.send([contextMessage], message.from);
+										bot.send([contextMessage], message.from)
 									})
 								}
 								else
@@ -1192,7 +1185,7 @@
 									getContextMessage(message, "voting", function (contextMessage)
 									{
 										let votingErrorString = "You have already voted for this poll"
-										bot.send([votingErrorString, contextMessage], message.from);
+										bot.send([votingErrorString, contextMessage], message.from)
 									})
 								}
 							})
@@ -1209,14 +1202,14 @@
 
 									getContextMessage(message, "voting_options", function (contextMessage)
 									{
-										bot.send([contextMessage], message.from);
+										bot.send([contextMessage], message.from)
 									})
 									break
 
 								default:
 									getContextMessage(message, context, function (contextMessage)
 									{
-										bot.send([contextMessage], message.from);
+										bot.send([contextMessage], message.from)
 									})
 									break
 							}
@@ -1278,7 +1271,7 @@
 					{
 						if (announcementFound === false)
 						{
-							if (message.body == "🔙 To Home")
+							if (message.body == "🏠 Back to home")
 							{
 								userRef.update(
 								{
@@ -1401,7 +1394,7 @@
 							{
 								getContextMessage(message, context, function (contextMessage)
 								{
-									bot.send([contextMessage], message.from);
+									bot.send([contextMessage], message.from)
 								})
 							}
 						})
@@ -1411,7 +1404,7 @@
 				case "homework_actions":
 					switch (message.body)
 					{
-						case "Add Homework Item":
+						case "Add homework item":
 							userRef.update(
 							{
 								context: "add_homework_item"
@@ -1423,7 +1416,7 @@
 							})
 							break
 
-						case "Show Homework":
+						case "Show homework":
 						case "homework":
 						case "Homework":
 							getHomeworkString(function (homeworkString)
@@ -1432,18 +1425,18 @@
 								{
 									if (contextMessage != null)
 									{
-										bot.send([Bot.Message.text(homeworkString), contextMessage], message.from);
+										bot.send([Bot.Message.text(homeworkString), contextMessage], message.from)
 									}
 									else
 									{
-										bot.send([Bot.Message.text(homeworkString)], message.from);
+										bot.send([Bot.Message.text(homeworkString)], message.from)
 									}
-								});
-							});
+								})
+							})
 
 							break
 
-						case "Remove Homework Item":
+						case "Remove homework item":
 							userRef.update(
 							{
 								context: "remove_homework_item"
@@ -1451,11 +1444,11 @@
 
 							getContextMessage(message, "remove_homework_item", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
-						case "Manually Clear Homework":
+						case "Manually clear homework":
 							userRef.update(
 							{
 								context: "clear_homework"
@@ -1463,11 +1456,11 @@
 
 							getContextMessage(message, "clear_homework", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
-						case "Enable Homework Auto Clear":
+						case "Enable homework auto clear":
 							userRef.update(
 							{
 								context: "enable_homework_auto_clear"
@@ -1475,11 +1468,11 @@
 
 							getContextMessage(message, "enable_homework_auto_clear", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
-						case "Disable Homework Auto Clear":
+						case "Disable homework auto clear":
 							userRef.update(
 							{
 								context: "disable_homework_auto_clear"
@@ -1487,11 +1480,11 @@
 
 							getContextMessage(message, "disable_homework_auto_clear", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
-						case "Enable Homework Notifications":
+						case "Enable homework notifications":
 							userRef.update(
 							{
 								context: "enable_homework_notifications"
@@ -1499,11 +1492,11 @@
 
 							getContextMessage(message, "enable_homework_notifications", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
-						case "Disable Homework Notifications":
+						case "Disable homework notifications":
 							userRef.update(
 							{
 								context: "disable_homework_notifications"
@@ -1511,7 +1504,7 @@
 
 							getContextMessage(message, "disable_homework_notifications", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
@@ -1523,14 +1516,14 @@
 
 							getContextMessage(message, "admin_actions", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
 						default:
 							getContextMessage(message, context, function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 
 							break
@@ -1581,7 +1574,7 @@
 					switch (message.body)
 					{
 
-						case "Create a Poll":
+						case "Create a poll":
 							userRef.update(
 							{
 								context: "add_poll_title"
@@ -1589,11 +1582,11 @@
 
 							getContextMessage(message, "add_poll_title", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
-						case "End a Poll":
+						case "End a poll":
 							userRef.update(
 							{
 								context: "end_a_poll"
@@ -1601,7 +1594,7 @@
 
 							getContextMessage(message, "end_a_poll", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
@@ -1613,14 +1606,14 @@
 
 							getContextMessage(message, "admin_actions", function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 
 						default:
 							getContextMessage(message, context, function (contextMessage)
 							{
-								bot.send([contextMessage], message.from);
+								bot.send([contextMessage], message.from)
 							})
 							break
 					}
@@ -1826,7 +1819,7 @@
 
 								getContextMessage(message, "voting_actions", function (contextMessage)
 								{
-									bot.send([contextMessage], message.from);
+									bot.send([contextMessage], message.from)
 								})
 
 							})
@@ -1843,14 +1836,14 @@
 
 									getContextMessage(message, "voting_actions", function (contextMessage)
 									{
-										bot.send([contextMessage], message.from);
+										bot.send([contextMessage], message.from)
 									})
 									break
 
 								default:
 									getContextMessage(message, context, function (contextMessage)
 									{
-										bot.send([contextMessage], message.from);
+										bot.send([contextMessage], message.from)
 									})
 									break
 							}
@@ -2029,7 +2022,7 @@
 							{
 								getContextMessage(message, "homework_actions", function (contextMessage)
 								{
-									bot.send([contextMessage], message.from);
+									bot.send([contextMessage], message.from)
 								})
 							}
 						})
@@ -2286,7 +2279,7 @@
 
 									subscribers.push(UsersDecodedUsername)
 								}
-							});
+							})
 
 							usersRef.once("value", function (snapshot)
 							{
@@ -2298,10 +2291,10 @@
 								let announcementSentConfirmation = "Your announcement has been sent"
 								userRef.update(
 								{
-									context: "voting_actions"
+									context: "ask_make_poll_announcement"
 								})
 
-								getContextMessage(message, "voting_actions", function (contextMessage)
+								getContextMessage(message, "ask_make_poll_announcement", function (contextMessage)
 								{
 									bot.send([announcementSentConfirmation, contextMessage], message.from)
 								})
@@ -2357,7 +2350,7 @@
 							})
 							break
 
-						case "🔙 To Home":
+						case "🏠 Back to home":
 							userRef.update(
 							{
 								context: "home"
@@ -2417,7 +2410,7 @@
 									{
 										getContextMessage(message, context, function (contextMessage)
 										{
-											bot.send([votingResultString, contextMessage], message.from);
+											bot.send([votingResultString, contextMessage], message.from)
 										})
 									})
 								}
@@ -2426,7 +2419,7 @@
 									getContextMessage(message, "view_poll_results", function (contextMessage)
 									{
 										let viewVotingErrorString = "You must vote for this poll before you can view its results"
-										bot.send([viewVotingErrorString, contextMessage], message.from);
+										bot.send([viewVotingErrorString, contextMessage], message.from)
 									})
 								}
 							})
@@ -2443,14 +2436,14 @@
 
 									getContextMessage(message, "voting_options", function (contextMessage)
 									{
-										bot.send([contextMessage], message.from);
+										bot.send([contextMessage], message.from)
 									})
 									break
 
 								default:
 									getContextMessage(message, context, function (contextMessage)
 									{
-										bot.send([contextMessage], message.from);
+										bot.send([contextMessage], message.from)
 									})
 									break
 							}
@@ -2504,7 +2497,7 @@
 
 									subscribers.push(UsersDecodedUsername)
 								}
-							});
+							})
 
 							usersRef.once("value", function (snapshot)
 							{
@@ -2553,10 +2546,10 @@
 					sendErrorMessage(message, "context_error")
 					break
 			}
-		});
-	});
+		})
+	})
 
 	let server = http
 		.createServer(bot.incoming())
-		.listen(80);
+		.listen(80)
 	console.log("Server running")
