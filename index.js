@@ -216,6 +216,12 @@
 				callback(askAnnouncementImageString)
 				break
 
+			case "ask_change_from":
+				let askChangeFromString = Bot.Message.text("Would you like to change who the announcement is from (instead of yourself)?").addResponseKeyboard([Bot.Response.friendPicker("Select a person", 1, 1), "No"])
+
+				callback(askChangeFromString)
+				break
+
 			case "confirm_make_announcement":
 				let makeAnnouncementConfirmationString = Bot.Message.text("Are you sure that you want to create this announcement and send a message to eveyone on the subscribed list?").addResponseKeyboard(["Yes", "No"])
 
@@ -223,7 +229,7 @@
 				break
 
 			case "add_announcement_image":
-				let addAnnouncementImageString = Bot.Message.text("Please send me the image you would like to attach to this announcement").addResponseKeyboard(["Cancel"])
+				let addAnnouncementImageString = Bot.Message.text("Please send me the image you would like to attach to this announcement").addResponseKeyboard(["Cancel"], true)
 
 				callback(addAnnouncementImageString)
 				break
@@ -588,10 +594,10 @@
 
 				userRef.update(
 				{
-					context: "confirm_make_announcement"
+					context: "ask_change_from"
 				})
 
-				getContextMessage(message, "confirm_make_announcement", function (contextMessage)
+				getContextMessage(message, "ask_change_from", function (contextMessage)
 				{
 					bot.send(contextMessage, message.from)
 				})
@@ -661,10 +667,30 @@
 
 		userRef.child("context").once("value", function (snapshot)
 		{
-			getContextMessage(message, snapshot.val(), function (contextMessage)
+			let context = snapshot.val()
+			if (context == "ask_change_from")
 			{
-				bot.send(contextMessage, message.from)
-			})
+				var data = {}
+				data["from"] = message.picked[0]
+				announcementsRef.child("pending").child(message.from).update(data)
+
+				userRef.update(
+				{
+					context: "confirm_make_announcement"
+				})
+
+				getContextMessage(message, "confirm_make_announcement", function (contextMessage)
+				{
+					bot.send(contextMessage, message.from)
+				})
+			}
+			else
+			{
+				getContextMessage(message, context, function (contextMessage)
+				{
+					bot.send(contextMessage, message.from)
+				})
+			}
 		})
 	})
 
@@ -2361,6 +2387,32 @@
 					}
 					break
 
+				case "ask_change_from":
+					if (message.body == "No")
+					{
+						var data = {}
+						data["from"] = message.from
+						announcementsRef.child("pending").child(message.from).update(data)
+
+						userRef.update(
+						{
+							context: "confirm_make_announcement"
+						})
+
+						getContextMessage(message, "confirm_make_announcement", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						getContextMessage(message, context, function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
 				case "add_announcement_body":
 					if (message.body != "Cancel")
 					{
@@ -2400,6 +2452,29 @@
 					}
 					break
 
+				case "add_announcement_image":
+					if (message.body == "Cancel")
+					{
+						announcementsRef.child("pending").child(message.from).set(null)
+						userRef.update(
+						{
+							context: "admin_actions"
+						})
+
+						getContextMessage(message, "admin_actions", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						getContextMessage(message, context, function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
 				case "ask_announcement_image":
 
 					if (message.body == "Yes")
@@ -2418,10 +2493,10 @@
 					{
 						userRef.update(
 						{
-							context: "confirm_make_announcement"
+							context: "ask_change_from"
 						})
 
-						getContextMessage(message, "confirm_make_announcement", function (contextMessage)
+						getContextMessage(message, "ask_change_from", function (contextMessage)
 						{
 							bot.send(contextMessage, message.from)
 						})
@@ -2779,20 +2854,9 @@
 							let announcementRef = announcementsRef.child("items").push()
 
 							let announcementItems = []
-							var announcementData = {}
-							announcementData["title"] = snapshot.val().title
-							announcementData["body"] = snapshot.val().body
-							announcementData["from"] = message.from
+							var announcementData = snapshot.val()
 							announcementData["negative_timestamp"] = (new Date() / 1000) * -1
-
-							announcementsRef.child("pending").child(message.from).child("picture_url").once("value", function (snapshot)
-							{
-								if (snapshot.exists())
-								{
-									announcementData["picture_url"] = snapshot.val()
-								}
-								announcementRef.update(announcementData)
-							})
+							announcementRef.update(announcementData)
 
 							announcementItems.push(Bot.Message.text("New announcement from @" + message.from + " - \n\n" + snapshot.val().title + ":\n\n" + snapshot.val().body).addResponseKeyboard(["Dismiss"]))
 
