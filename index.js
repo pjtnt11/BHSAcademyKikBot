@@ -28,7 +28,7 @@
 	var usersRef = database.ref("/users")
 	var announcementsRef = database.ref("/announcements")
 	var votingRef = database.ref("/voting")
-	var suggestComplaintRef = database.ref("/suggestComplaint")
+	var feedbackRef = database.ref("/feedback")
 
 	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More"]
 	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More", "🔒 Admin Actions"]
@@ -437,10 +437,10 @@
 				})
 				break
 
-			case "suggestions_complaints":
-				let SuggestComplaintActionsString = Bot.Message.text("Would you like to submit a suggestion or a complaint?").addResponseKeyboard(["Suggestion", "Complaint", "🏠 Back to Home"])
+			case "feedback":
+				let feedbackActionsString = Bot.Message.text("Would you like to submit a suggestion or a complaint?").addResponseKeyboard(["Suggestion", "Complaint", "🏠 Back to Home"])
 
-				callback(SuggestComplaintActionsString)
+				callback(feedbackActionsString)
 				break
 
 			case "suggestion":
@@ -456,13 +456,13 @@
 				break
 
 			case "confirm_suggest_complaint":
-				let ConfirmCreateSuggestComplaintString = Bot.Message.text("Are you sure this is all you want to say?").addResponseKeyboard(["Yes", "No"])
+				let ConfirmCreateUserInputString = Bot.Message.text("Are you sure this is all you want to say?").addResponseKeyboard(["Yes", "No"])
 
-				callback(ConfirmCreateSuggestComplaintString)
+				callback(ConfirmCreateUserInputString)
 				break
 
 			case "more":
-				let moreString = Bot.Message.text("How can I help you?").addResponseKeyboard(["📲 Complaints/Suggestions", "ℹ️ Admins", "📊 Stats", "👥 Credits", "⚙ Settings", "🏠 Back to home"])
+				let moreString = Bot.Message.text("How can I help you?").addResponseKeyboard(["📲 Feedback", "ℹ️ Admins", "📊 Stats", "👥 Credits", "⚙ Settings", "🏠 Back to home"])
 
 				callback(moreString)
 				break
@@ -1241,33 +1241,16 @@
 							})
 							break
 
-						case "📲 Complaints/Suggestions":
-						case "📲 complaints/suggestions":
-						case "📲 complaints/Suggestions":
-						case "📲 Complaints/suggestions":
-						case "📲 Suggestions/Complaints":
-						case "📲 suggestions/complaints":
-						case "📲 Suggestions/complaints":
-						case "📲 suggestions/Complaints":
-						case "Complaints/Suggestions":
-						case "complaints/suggestions":
-						case "complaints/Suggestions":
-						case "Complaints/suggestions":
-						case "Suggestions/Complaints":
-						case "suggestions/complaints":
-						case "Suggestions/complaints":
-						case "suggestions/Complaints":
-						case "Suggestions":
-						case "suggestions":
-						case "Complaints":
-						case "complaints":
+						case "📲 Feedback":
+						case "Feedback":
+						case "feedback"
 						case "📲":
 							userRef.update(
 							{
-								context: "suggestions_complaints"
+								context: "feedback"
 							})
 
-							getContextMessage(message, "suggestions_complaints", function (contextMessage)
+							getContextMessage(message, "feedback", function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -1792,7 +1775,7 @@
 					}
 					break
 
-				case "suggestions_complaints":
+				case "feedback":
 					switch (message.body)
 					{
 
@@ -2878,7 +2861,7 @@
 					break
 
 				case "suggestion":
-					var suggestRef = suggestComplaintRef.child("suggestions")
+					var suggestRef = feedbackRef.child("suggestions")
 
 					var usersEncodedUsername = message.from
 					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
@@ -2890,10 +2873,10 @@
 						suggestRef.child("pending").child(usersEncodedUsername).set(null)
 						userRef.update(
 						{
-							context: "suggestions_complaints"
+							context: "feedback"
 						})
 
-						getContextMessage(message, "suggestions_complaints", function (contextMessage)
+						getContextMessage(message, "feedback", function (contextMessage)
 						{
 							bot.send(contextMessage, message.from)
 						})
@@ -2917,7 +2900,7 @@
 					break
 
 				case "complaint":
-					var complaintRef = suggestComplaintRef.child("complaints")
+					var complaintRef = feedbackRef.child("complaints")
 
 					var usersEncodedUsername = message.from
 					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
@@ -2929,10 +2912,10 @@
 						complaintRef.child("pending").child(usersEncodedUsername).set(null)
 						userRef.update(
 						{
-							context: "suggestions_complaints"
+							context: "feedback"
 						})
 
-						getContextMessage(message, "suggestions_complaints", function (contextMessage)
+						getContextMessage(message, "feedback", function (contextMessage)
 						{
 							bot.send(contextMessage, message.from)
 						})
@@ -2958,7 +2941,7 @@
 				case "confirm_suggest":
 					if (message.body == "Yes")
 					{
-						let suggestRef = suggestComplaintRef.child("suggestions").child("items").push()
+						let suggestRef = feedbackRef.child("suggestions").child("items").push()
 						var data = {}
 
 						var usersEncodedUsername = message.from
@@ -2966,7 +2949,7 @@
 						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
 						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-						suggestComplaintRef.child("suggestions").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
+						feedbackRef.child("suggestions").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
 						{
 							var data = {}
 							data["timestamp"] = (new Date() / 1000)
@@ -2974,7 +2957,7 @@
 							data["from"] = message.from
 							suggestRef.update(data)
 
-							suggestComplaintRef.child("suggestions").child("pending").child(usersEncodedUsername).set(null)
+							feedbackRef.child("suggestions").child("pending").child(usersEncodedUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
@@ -2998,7 +2981,7 @@
 					}
 					else if (message.body == "No")
 					{
-						suggestComplaintRef.child("pending").child(message.from).set(null)
+						feedbackRef.child("pending").child(message.from).set(null)
 						userRef.update(
 						{
 							context: "suggestion"
@@ -3021,7 +3004,7 @@
 				case "confirm_complaint":
 					if (message.body == "Yes")
 					{
-						let complaintRef = suggestComplaintRef.child("complaints").child("items").push()
+						let complaintRef = feedbackRef.child("complaints").child("items").push()
 						var data = {}
 
 						var usersEncodedUsername = message.from
@@ -3029,14 +3012,14 @@
 						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
 						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-						suggestComplaintRef.child("complaints").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
+						feedbackRef.child("complaints").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
 						{
 							var data = {}
 							data["timestamp"] = (new Date() / 1000)
 							data["body"] = snapshot.val()
 							data["from"] = message.from
 							complaintRef.update(data)
-							suggestComplaintRef.child("complaints").child("pending").child(usersEncodedUsername).set(null)
+							feedbackRef.child("complaints").child("pending").child(usersEncodedUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
@@ -3060,7 +3043,7 @@
 					}
 					else if (message.body == "No")
 					{
-						suggestComplaintRef.child("pending").child(message.from).set(null)
+						feedbackRef.child("pending").child(message.from).set(null)
 						userRef.update(
 						{
 							context: "complaint"
