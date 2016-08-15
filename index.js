@@ -455,7 +455,7 @@
 				break
 
 			case "more":
-				let moreString = Bot.Message.text("How can I help you?").addResponseKeyboard(["ℹ️ Admins", "📲 Complaints/Suggestions", "📊 Stats", "⚙ Settings", "🏠 Back to home"])
+				let moreString = Bot.Message.text("How can I help you?").addResponseKeyboard(["📲 Complaints/Suggestions", "ℹ️ Admins", "📊 Stats", "👥 Credits", "⚙ Settings", "🏠 Back to home"])
 
 				callback(moreString)
 				break
@@ -1259,6 +1259,14 @@
 							getContextMessage(message, "home", function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
+							})
+							break
+
+						case "👥 Credits":
+							let creditsText = "This bot was programed from scratch by Patrick Stephen.\n\nThanks to Jack Locascio for helping with some of the programing.\n\nAlso, thanks to all of the bot admins for helping with testing, suggesting features and helping manage the bot.\n\nAnd thank you to eveyone else for using the bot and providing feeback"
+							getContextMessage(message, context, function (contextMessage)
+							{
+								bot.send([creditsText, contextMessage], message.from)
 							})
 							break
 
