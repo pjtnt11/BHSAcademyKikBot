@@ -1162,7 +1162,7 @@
 
 							usersRef.on("child_added", function (snapshot)
 							{
-								if (snapshot.val().is_admin == true && snapshot.key !== "pjtnt11")
+								if (snapshot.val().is_admin == true)
 								{
 									adminsString = adminsString + "@" + snapshot.key + "\n"
 								}
@@ -1171,7 +1171,6 @@
 							usersRef.once("value", function (snapshot)
 							{
 								usersRef.off("child_added")
-								adminsString = adminsString + "\n" + "Also, @pjtnt11 is the owner and creator of the bot"
 
 								getContextMessage(message, context, function (contextMessage)
 								{
