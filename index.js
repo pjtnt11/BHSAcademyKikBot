@@ -82,12 +82,14 @@
 	{
 		var data = {}
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
-		data[UsersEncodedUsername] = {
+		data[usersEncodedUsername] = {
 			context: "home",
 			is_admin: false,
 			subscribed: true
@@ -104,10 +106,12 @@
 
 	function getContextMessage(message, context, callback)
 	{
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		switch (context)
 		{
@@ -396,11 +400,14 @@
 				var votingItems = []
 				votingRef.child("polls").child("active").on("child_added", function (snapshot)
 				{
-					var UsersEncodedUsername = message.from
-					UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
-					if (snapshot.child("voters").child(UsersEncodedUsername).exists())
+					var usersEncodedUsername = message.from
+					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+					usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+					usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+
+					if (snapshot.child("voters").child(usersEncodedUsername).exists())
 					{
-						if (snapshot.child("voters").child(UsersEncodedUsername).val() == "pending")
+						if (snapshot.child("voters").child(usersEncodedUsername).val() == "pending")
 						{
 							userVotePendingFound = true
 							userVotePendingKey = snapshot.key
@@ -482,10 +489,12 @@
 
 	function adminCheck(message, callback)
 	{
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 		userRef.child("is_admin").once("value", function (snapshot)
 		{
 			callback(snapshot.val())
@@ -526,10 +535,12 @@
 
 		console.log(message.from + "\: \(started chatting\)")
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		let sendingMessage = Bot.Message.text("Welcome to the Bartlett High School Academy Kik Bot!\n\nWith this bot you will be able to vote on current topics, receive daily homework information and get notified of announcements.\n\nThis bot was created from scratch by Patrick Stephen so if you have any questions, contact him at @pjtnt11")
 
@@ -552,10 +563,12 @@
 
 		console.log(message.from + ": (picture message) " + message.picUrl)
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -596,10 +609,12 @@
 	bot.onVideoMessage((message) =>
 	{
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -625,10 +640,12 @@
 	bot.onFriendPickerMessage((message) =>
 	{
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -654,10 +671,12 @@
 	bot.onScanDataMessage((message) =>
 	{
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -683,10 +702,12 @@
 	bot.onStickerMessage((message) =>
 	{
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -718,10 +739,12 @@
 			message.markRead()
 		}
 
-		var UsersEncodedUsername = message.from
-		UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+		var usersEncodedUsername = message.from
+		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-		let userRef = usersRef.child(UsersEncodedUsername)
+		let userRef = usersRef.child(usersEncodedUsername)
 
 		userRef.child("context").once("value", function (snapshot)
 		{
@@ -1263,7 +1286,7 @@
 							break
 
 						case "👥 Credits":
-							let creditsText = "This bot was programed from scratch by Patrick Stephen.\n\nThanks to Jack Locascio for helping with some of the programing.\n\nAlso, thanks to all of the bot admins for helping with testing, suggesting features and helping manage the bot.\n\nAnd thank you to eveyone else for using the bot and providing feeback"
+							let creditsText = "This bot was programed from scratch by Patrick Stephen.\n\nThanks to Jack Locascio for helping with some of the programing.\n\nAlso, thanks to all of the bot admins for helping with testing, suggesting features and helping manage the bot.\n\nAnd thank you to eveyone else for using the bot and providing feedback"
 							getContextMessage(message, context, function (contextMessage)
 							{
 								bot.send([creditsText, contextMessage], message.from)
@@ -1299,15 +1322,17 @@
 						if (titleMatch == true)
 						{
 
-							var UsersEncodedUsername = message.from
-							UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+							var usersEncodedUsername = message.from
+							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-							pollRef.child("voters").child(UsersEncodedUsername).once("value", function (snapshot)
+							pollRef.child("voters").child(usersEncodedUsername).once("value", function (snapshot)
 							{
 								if (!snapshot.exists())
 								{
 									var data = {}
-									data[UsersEncodedUsername] = "pending"
+									data[usersEncodedUsername] = "pending"
 									pollRef.child("voters").update(data)
 
 									userRef.update(
@@ -1449,11 +1474,14 @@
 
 						votingRef.child("polls").child("active").on("child_added", function (snapshot)
 						{
-							var UsersEncodedUsername = message.from
-							UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
-							if (snapshot.child("voters").child(UsersEncodedUsername).exists())
+							var usersEncodedUsername = message.from
+							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+
+							if (snapshot.child("voters").child(usersEncodedUsername).exists())
 							{
-								if (snapshot.child("voters").child(UsersEncodedUsername).val() == "pending")
+								if (snapshot.child("voters").child(usersEncodedUsername).val() == "pending")
 								{
 									userVotePendingFound = true
 									userVotePendingKey = snapshot.key
@@ -1488,13 +1516,16 @@
 					}
 					else
 					{
-						var UsersEncodedUsername = message.from
-						UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+
 						votingRef.child("polls").child("active").on("child_added", function (snapshot)
 						{
-							if (snapshot.child("voters").child(UsersEncodedUsername).exists())
+							if (snapshot.child("voters").child(usersEncodedUsername).exists())
 							{
-								if (snapshot.child("voters").child(UsersEncodedUsername).val() == "pending")
+								if (snapshot.child("voters").child(usersEncodedUsername).val() == "pending")
 								{
 									userVotePendingFound = true
 									userVotePendingKey = snapshot.key
@@ -1504,6 +1535,8 @@
 
 						var encodedItemName = message.body
 						encodedItemName = encodedItemName.replace(/\./g, "%2E")
+						encodedItemName = encodedItemName.replace(/\$/g, "%24")
+						encodedItemName = encodedItemName.replace(/#/g, "%23")
 						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").child(encodedItemName).once("value", function (snapshot)
 						{
 
@@ -1516,11 +1549,13 @@
 								})
 								votingRef.child("polls").child("active").child(userVotePendingKey).child("items").update(VoteData)
 
-								var UsersEncodedUsername = message.from
-								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+								var usersEncodedUsername = message.from
+								usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+								usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+								usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 								var VoterData = {}
-								VoterData[UsersEncodedUsername] = message.body
+								VoterData[usersEncodedUsername] = message.body
 
 								votingRef.child("polls").child("active").child(userVotePendingKey).child("voters").update(VoterData)
 
@@ -2454,9 +2489,13 @@
 					{
 						var encodedVoteResponce = message.body
 						encodedVoteResponce = encodedVoteResponce.replace(/\./g, "%2E")
+						encodedVoteResponce = encodedVoteResponce.replace(/\$/g, "%24")
+						encodedVoteResponce = encodedVoteResponce.replace(/#/g, "%23")
 
 						var usersEncodedUsername = message.from
 						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 						let data = {}
 
 						data[encodedVoteResponce] = true
@@ -2486,6 +2525,8 @@
 
 							var usersEncodedUsername = message.from
 							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 							votingRef.child("pending").child(usersEncodedUsername).child("make_announcement").once("value", function (snapshot)
 							{
@@ -2502,10 +2543,12 @@
 
 							usersRef.on("child_added", function (snapshot)
 							{
-								var UsersEncodedUsername = message.from
-								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+								var usersEncodedUsername = message.from
+								usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+								usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+								usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-								if (snapshot.val().subscribed == true && snapshot.key !== UsersEncodedUsername)
+								if (snapshot.val().subscribed == true && snapshot.key !== usersEncodedUsername)
 								{
 									var UsersDecodedUsername = snapshot.key
 									UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
@@ -2523,8 +2566,10 @@
 								})
 
 								usersRef.off("child_added")
-								var UsersEncodedUsername = message.from
-								UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+								var usersEncodedUsername = message.from
+								usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+								usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+								usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 								let votingAnnouncementString = Bot.Message.text("A new poll has been created by @" + message.from + " with the question \"" + data["title"] + "\" go cast your vote in the voting menu!").addResponseKeyboard(["Dismiss"])
 								if (makeAnnouncement)
@@ -2563,13 +2608,15 @@
 				case "ask_make_poll_announcement":
 					if (message.body == "Yes")
 					{
-						var UsersEncodedUsername = message.from
-						UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 						var data = {}
 						data["make_announcement"] = true
 
-						votingRef.child("pending").child(UsersEncodedUsername).update(data)
+						votingRef.child("pending").child(usersEncodedUsername).update(data)
 
 						userRef.update(
 						{
@@ -2583,11 +2630,13 @@
 					}
 					else if (message.body == "No")
 					{
-						var UsersEncodedUsername = message.from
-						UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 						var data = {}
 						data["make_announcement"] = false
-						votingRef.child("pending").child(UsersEncodedUsername).update(data)
+						votingRef.child("pending").child(usersEncodedUsername).update(data)
 						userRef.update(
 						{
 							context: "confirm_create_poll"
@@ -2674,11 +2723,13 @@
 						if (titleMatch == true)
 						{
 
-							var UsersEncodedUsername = message.from
+							var usersEncodedUsername = message.from
 
-							UsersEncodedUsername = UsersEncodedUsername.replace(/\./g, "%2E")
+							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-							pollRef.child("voters").child(UsersEncodedUsername).once("value", function (snapshot)
+							pollRef.child("voters").child(usersEncodedUsername).once("value", function (snapshot)
 							{
 								if (snapshot.exists())
 								{
@@ -2831,6 +2882,8 @@
 
 					var usersEncodedUsername = message.from
 					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+					usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+					usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 					if (message.body == "Cancel")
 					{
@@ -2868,6 +2921,8 @@
 
 					var usersEncodedUsername = message.from
 					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+					usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+					usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 					if (message.body == "Cancel")
 					{
@@ -2908,6 +2963,8 @@
 
 						var usersEncodedUsername = message.from
 						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 						suggestComplaintRef.child("suggestions").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
 						{
@@ -2969,6 +3026,8 @@
 
 						var usersEncodedUsername = message.from
 						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
+						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 						suggestComplaintRef.child("complaints").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
 						{
