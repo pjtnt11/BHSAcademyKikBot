@@ -2538,7 +2538,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(messassassage, context, function (contextMessage)
+						getContextMessage(message, context, function (contextMessage)
 						{
 							bot.send(contextMessage, message.from)
 						})
