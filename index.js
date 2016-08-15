@@ -886,6 +886,20 @@
 							})
 							break
 
+						case "🗳 Voting":
+						case "🗳 voting":
+						case "voting":
+							userRef.update(
+							{
+								context: "voting_options"
+							})
+
+							getContextMessage(message, "voting_options", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
 						default:
 							//sendErrorMessage(message, "default")
 							getContextMessage(message, context, function (contextMessage)
@@ -1161,19 +1175,6 @@
 							})
 
 							getContextMessage(message, "settings", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-							break
-
-						case "🗳 Voting":
-						case "Voting":
-							userRef.update(
-							{
-								context: "voting_options"
-							})
-
-							getContextMessage(message, "voting_options", function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
