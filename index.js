@@ -1158,7 +1158,7 @@
 						case "ℹ️":
 						case "ℹ️ admins":
 						case "ℹ️ Admins":
-							var adminsString = "The current admins are:\n"
+							var adminsString = "The admins of this bot are\n"
 
 							usersRef.on("child_added", function (snapshot)
 							{
