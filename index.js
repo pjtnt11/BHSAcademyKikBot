@@ -290,7 +290,7 @@
 			case "announcements":
 				let announcements = []
 
-				announcementsRef.child("items").orderByChild("negitive_timestamp").limitToFirst(5).on("child_added", function (snapshot)
+				announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(5).on("child_added", function (snapshot)
 				{
 					announcements.push(snapshot.val().title)
 				})
@@ -336,7 +336,7 @@
 
 			case "voting":
 				var pollTitles = []
-				votingRef.child("polls").child("active").limitToLast(19).orderByChild("negitive_timestamp").on("child_added", function (snapshot)
+				votingRef.child("polls").child("active").limitToLast(19).orderByChild("negative_timestamp").on("child_added", function (snapshot)
 				{
 					pollTitles.push(snapshot.val().title)
 				})
@@ -1313,7 +1313,7 @@
 
 					var announcementFound = false
 
-					announcementsRef.child("items").orderByChild("negitive_timest`amp").limitToFirst(5).on("child_added", function (snapshot)
+					announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(5).on("child_added", function (snapshot)
 					{
 						if (snapshot.val().title === message.body)
 						{
@@ -2419,7 +2419,7 @@
 						let pollRef = votingRef.child("polls").child("active").push()
 						var timestamp = {}
 						var data = {}
-						timestamp["negitive_timestamp"] = (new Date() / 1000) * -1
+						timestamp["negative_timestamp"] = (new Date() / 1000) * -1
 						pollRef.update(timestamp)
 						votingRef.child("pending").child(message.from).child("items").on("child_added", function (snapshot)
 						{
@@ -2696,7 +2696,7 @@
 							announcementData["title"] = snapshot.val().title
 							announcementData["body"] = snapshot.val().body
 							announcementData["from"] = message.from
-							announcementData["negitive_timestamp"] = (new Date() / 1000) * -1
+							announcementData["negative_timestamp"] = (new Date() / 1000) * -1
 
 							announcementsRef.child("pending").child(message.from).child("picture_url").once("value", function (snapshot)
 							{
