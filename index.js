@@ -1243,7 +1243,7 @@
 
 						case "📲 Feedback":
 						case "Feedback":
-						case "feedback"
+						case "feedback":
 						case "📲":
 							userRef.update(
 							{
