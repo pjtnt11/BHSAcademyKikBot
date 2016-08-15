@@ -30,8 +30,8 @@
 	var votingRef = database.ref("/voting")
 	var suggestComplaintRef = database.ref("/suggestComplaint")
 
-	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📲 Complaints/Suggestions"]
-	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "ℹ️ Admins", "⚙ Settings", "📲 Complaints/Suggestions", "📊 Stats", "🔒 Admin Actions"]
+	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More"]
+	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More", "🔒 Admin Actions"]
 
 	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function ()
 	{
@@ -453,6 +453,12 @@
 
 				callback(ConfirmCreateSuggestComplaintString)
 				break
+
+			case "more":
+				let moreString = Bot.Message.text("How can I help you?").addResponseKeyboard(["ℹ️ Admins", "📲 Complaints/Suggestions", "📊 Stats", "⚙ Settings", "🏠 Back to home"])
+
+				callback(moreString)
+				break
 		}
 	}
 
@@ -773,57 +779,21 @@
 							})
 							break
 
-						case "admins":
-						case "Admins":
-						case "ℹ️":
-						case "ℹ️ admins":
-						case "ℹ️ Admins":
-							var adminsString = "The current admins are:\n"
+						case "🗂 More":
+						case "🗂 more":
+						case "More":
+						case "more":
 
-							usersRef.on("child_added", function (snapshot)
-							{
-								if (snapshot.val().is_admin == true && snapshot.key !== "pjtnt11")
-								{
-									adminsString = adminsString + "@" + snapshot.key + "\n"
-								}
-							})
-
-							usersRef.once("value", function (snapshot)
-							{
-								usersRef.off("child_added")
-								adminsString = adminsString + "\n" + "Also, @pjtnt11 is the owner and creator of the bot"
-
-								getContextMessage(message, context, function (contextMessage)
-								{
-									if (contextMessage != null)
-									{
-										message.reply([Bot.Message.text(adminsString), contextMessage])
-									}
-									else
-									{
-										message.reply([Bot.Message.text(adminsString)])
-									}
-								})
-							})
-							break
-
-						case "settings":
-						case "Settings":
-						case "⚙":
-						case "⚙ settings":
-						case "⚙ Settings":
 							userRef.update(
 							{
-								context: "settings"
+								context: "more"
 							})
 
-							getContextMessage(message, "settings", function (contextMessage)
+							getContextMessage(message, "more", function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
 							break
-
-
 
 						case "Admin Actions":
 						case "admin actions":
@@ -916,89 +886,6 @@
 							})
 							break
 
-						case "🗳 Voting":
-						case "Voting":
-							userRef.update(
-							{
-								context: "voting_options"
-							})
-
-							getContextMessage(message, "voting_options", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-							break
-
-						case "📊 Stats":
-						case "Stats":
-						case "stats":
-							var numRegisteredUsers = 0
-							var numSubscribedUsers = 0
-							var numAdmins = 0
-
-							usersRef.on("child_added", function (snapshot)
-							{
-								if (snapshot.val().subscribed == true)
-								{
-									numSubscribedUsers++
-								}
-								if (snapshot.val().is_admin == true)
-								{
-									numAdmins++
-								}
-							})
-
-							usersRef.once("value", function (snapshot)
-							{
-								numRegisteredUsers = snapshot.numChildren()
-								let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins")
-
-								getContextMessage(message, "home", function (contextMessage)
-								{
-									if (contextMessage != null)
-									{
-										message.reply([statsString, contextMessage], message.from)
-									}
-									else
-									{
-										message.reply([statsString], message.from)
-									}
-								})
-							})
-							break
-
-						case "📲 Complaints/Suggestions":
-						case "📲 complaints/suggestions":
-						case "📲 complaints/Suggestions":
-						case "📲 Complaints/suggestions":
-						case "📲 Suggestions/Complaints":
-						case "📲 suggestions/complaints":
-						case "📲 Suggestions/complaints":
-						case "📲 suggestions/Complaints":
-						case "Complaints/Suggestions":
-						case "complaints/suggestions":
-						case "complaints/Suggestions":
-						case "Complaints/suggestions":
-						case "Suggestions/Complaints":
-						case "suggestions/complaints":
-						case "Suggestions/complaints":
-						case "suggestions/Complaints":
-						case "Suggestions":
-						case "suggestions":
-						case "Complaints":
-						case "complaints":
-						case "📲":
-							userRef.update(
-							{
-								context: "suggestions_complaints"
-							})
-
-							getContextMessage(message, "suggestions_complaints", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-							break
-
 						default:
 							//sendErrorMessage(message, "default")
 							getContextMessage(message, context, function (contextMessage)
@@ -1042,7 +929,7 @@
 
 								userRef.update(
 								{
-									context: "home"
+									context: "more"
 								})
 							})
 
@@ -1058,7 +945,7 @@
 
 								if (snapshot.val() === true)
 								{
-									getContextMessage(message, "home", function (contextMessage)
+									getContextMessage(message, "more", function (contextMessage)
 									{
 										bot.send([subscribeErrorText, contextMessage], message.from)
 									})
@@ -1083,7 +970,7 @@
 
 							userRef.update(
 							{
-								context: "home"
+								context: "more"
 							})
 
 							let unsubscribeSuccessText = Bot.Message.text("You are now unsubscribed")
@@ -1093,7 +980,7 @@
 							{
 								if (snapshot.val() === false)
 								{
-									getContextMessage(message, "home", function (contextMessage)
+									getContextMessage(message, "more", function (contextMessage)
 									{
 										if (contextMessage !== null)
 										{
@@ -1111,7 +998,7 @@
 									{
 										subscribed: false
 									})
-									getContextMessage(message, "home", function (contextMessage)
+									getContextMessage(message, "more", function (contextMessage)
 									{
 										if (contextMessage !== null)
 										{
@@ -1131,10 +1018,10 @@
 
 							userRef.update(
 							{
-								context: "home"
+								context: "more"
 							})
 
-							getContextMessage(message, "home", function (contextMessage)
+							getContextMessage(message, "more", function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -1226,6 +1113,163 @@
 					// END "ADMIN ACTIONS" CONTEXT
 					///////////////////////////////
 
+				case "more":
+					switch (message.body)
+					{
+						case "admins":
+						case "Admins":
+						case "ℹ️":
+						case "ℹ️ admins":
+						case "ℹ️ Admins":
+							var adminsString = "The current admins are:\n"
+
+							usersRef.on("child_added", function (snapshot)
+							{
+								if (snapshot.val().is_admin == true && snapshot.key !== "pjtnt11")
+								{
+									adminsString = adminsString + "@" + snapshot.key + "\n"
+								}
+							})
+
+							usersRef.once("value", function (snapshot)
+							{
+								usersRef.off("child_added")
+								adminsString = adminsString + "\n" + "Also, @pjtnt11 is the owner and creator of the bot"
+
+								getContextMessage(message, context, function (contextMessage)
+								{
+									if (contextMessage != null)
+									{
+										message.reply([Bot.Message.text(adminsString), contextMessage])
+									}
+									else
+									{
+										message.reply([Bot.Message.text(adminsString)])
+									}
+								})
+							})
+							break
+
+						case "settings":
+						case "Settings":
+						case "⚙":
+						case "⚙ settings":
+						case "⚙ Settings":
+							userRef.update(
+							{
+								context: "settings"
+							})
+
+							getContextMessage(message, "settings", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						case "🗳 Voting":
+						case "Voting":
+							userRef.update(
+							{
+								context: "voting_options"
+							})
+
+							getContextMessage(message, "voting_options", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						case "📊 Stats":
+						case "Stats":
+						case "stats":
+							var numRegisteredUsers = 0
+							var numSubscribedUsers = 0
+							var numAdmins = 0
+
+							usersRef.on("child_added", function (snapshot)
+							{
+								if (snapshot.val().subscribed == true)
+								{
+									numSubscribedUsers++
+								}
+								if (snapshot.val().is_admin == true)
+								{
+									numAdmins++
+								}
+							})
+
+							usersRef.once("value", function (snapshot)
+							{
+								numRegisteredUsers = snapshot.numChildren()
+								let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins")
+
+								getContextMessage(message, "more", function (contextMessage)
+								{
+									if (contextMessage != null)
+									{
+										message.reply([statsString, contextMessage], message.from)
+									}
+									else
+									{
+										message.reply([statsString], message.from)
+									}
+								})
+							})
+							break
+
+						case "📲 Complaints/Suggestions":
+						case "📲 complaints/suggestions":
+						case "📲 complaints/Suggestions":
+						case "📲 Complaints/suggestions":
+						case "📲 Suggestions/Complaints":
+						case "📲 suggestions/complaints":
+						case "📲 Suggestions/complaints":
+						case "📲 suggestions/Complaints":
+						case "Complaints/Suggestions":
+						case "complaints/suggestions":
+						case "complaints/Suggestions":
+						case "Complaints/suggestions":
+						case "Suggestions/Complaints":
+						case "suggestions/complaints":
+						case "Suggestions/complaints":
+						case "suggestions/Complaints":
+						case "Suggestions":
+						case "suggestions":
+						case "Complaints":
+						case "complaints":
+						case "📲":
+							userRef.update(
+							{
+								context: "suggestions_complaints"
+							})
+
+							getContextMessage(message, "suggestions_complaints", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						case "🏠 Back to home":
+							userRef.update(
+							{
+								context: "home"
+							})
+
+							getContextMessage(message, "home", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						default:
+							getContextMessage(message, context, function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+					}
+					break
+
 				case "voting":
 
 					var pollTitles = []
@@ -1313,7 +1357,7 @@
 
 					var announcementFound = false
 
-					announcementsRef.child("items").orderByChild("negitive_timest`amp").limitToFirst(5).on("child_added", function (snapshot)
+					announcementsRef.child("items").orderByChild("negitive_timestamp").limitToFirst(5).on("child_added", function (snapshot)
 					{
 						if (snapshot.val().title === message.body)
 						{
@@ -2874,11 +2918,11 @@
 
 									userRef.update(
 									{
-										context: "home"
+										context: "more"
 									})
 
 									usersRef.off("child_added")
-									getContextMessage(message, "home", function (contextMessage)
+									getContextMessage(message, "more", function (contextMessage)
 									{
 										bot.send(["Thanks for the suggestion! We'll review it and hopefully add it as soon as we can.", contextMessage], message.from)
 									})
@@ -2934,11 +2978,11 @@
 
 									userRef.update(
 									{
-										context: "home"
+										context: "more"
 									})
 
 									usersRef.off("child_added")
-									getContextMessage(message, "home", function (contextMessage)
+									getContextMessage(message, "more", function (contextMessage)
 									{
 										bot.send(["Sorry about that, we'll get to fixing it right away!", contextMessage], message.from)
 									})
