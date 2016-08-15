@@ -1158,8 +1158,8 @@
 						case "ℹ️":
 						case "ℹ️ admins":
 						case "ℹ️ Admins":
-							var adminsString = "The admins of this bot are\n"
-
+							var adminsString = "Here are the admins\n"
+							var postAdminString = "Contact one of them if you are would like to create a poll or make an announcement"
 							usersRef.on("child_added", function (snapshot)
 							{
 								if (snapshot.val().is_admin == true)
@@ -1170,6 +1170,7 @@
 
 							usersRef.once("value", function (snapshot)
 							{
+								adminsString = adminsString + "\n" + postAdminString
 								usersRef.off("child_added")
 
 								getContextMessage(message, context, function (contextMessage)
