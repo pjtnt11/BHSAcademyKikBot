@@ -9,7 +9,7 @@
 
 	let bot = new Bot(
 	{
-		username: 'bhsacademybot_dev',
+		username: 'bhsacademybot',
 		apiKey: '1c744fe4-c975-4036-acc5-77663632c1a3',
 		baseUrl: 'http://ec2-52-41-29-101.us-west-2.compute.amazonaws.com',
 		manuallySendReadReceipts: true
