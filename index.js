@@ -1,19 +1,23 @@
 	'use strict'
 
 	var util = require('util')
+	var fs = require('fs')
 	var http = require('http')
 	var Bot = require('@kikinteractive/kik')
 	var firebase = require('firebase')
 	var schedule = require('node-schedule')
 	var moment = require('moment')
 
-	let bot = new Bot(
-	{
-		username: 'bhsacademybot_dev',
-		apiKey: '1c744fe4-c975-4036-acc5-77663632c1a3',
-		baseUrl: 'http://ec2-52-41-29-101.us-west-2.compute.amazonaws.com',
-		manuallySendReadReceipts: true
-	})
+	var contents = fs.readFileSync("KikBotKeys.json");
+	var jsonContent = JSON.parse(contents);
+
+	botData = {}
+	botData[username] = "bhsacademybot"
+	botData[apiKey] = jsonContent.apiKey
+	botData[baseUrl] = jsonContent.baseUrl
+	botData[manuallySendReadReceipts] = true
+
+	var bot = new Bot(botData)
 
 	bot.updateBotConfiguration()
 
@@ -2441,7 +2445,7 @@
 							context: "admin_actions"
 						})
 
-						getContextMessage(message, "admin_actions", function (contextMessage)
+						getConttextMessage(message, "admin_actions", function (contextMessage)
 						{
 							bot.send(contextMessage, message.from)
 						})
