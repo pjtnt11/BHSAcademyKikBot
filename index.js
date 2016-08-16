@@ -9,7 +9,7 @@
 
 	let bot = new Bot(
 	{
-		username: 'bhsacademybot',
+		username: 'bhsacademybot_dev',
 		apiKey: '1c744fe4-c975-4036-acc5-77663632c1a3',
 		baseUrl: 'http://ec2-52-41-29-101.us-west-2.compute.amazonaws.com',
 		manuallySendReadReceipts: true
@@ -29,7 +29,7 @@
 	var announcementsRef = database.ref("/announcements")
 	var votingRef = database.ref("/voting")
 	var feedbackRef = database.ref("/feedback")
-	var peerRef = database.ref("/peerReview")
+	var peerRef = database.ref("/peer_review")
 
 	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "📄 Peer Review", "🗂 More"]
 	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "📄 Peer Review", "🗂 More", "🔒 Admin Actions"]
@@ -486,7 +486,7 @@
 				callback(SubmitDocumentURLString)
 				break
 
-			case "submit_document_title"
+			case "submit_document_title":
 				let SubmitDocumentTitleString = Bot.Message.text("What is the title of the document?").addResponseKeyboard(["Cancel"], true)
 
 				callback(SubmitDocumentTitleString)
@@ -499,12 +499,13 @@
 				break
 
 			case "review_document":
-				peerRef.child("documents").child("active").limitToLast(19).orderByChild("negative_timestamp").on("child_added", function (snapshot)
+				var docTitles = []
+				peerRef.child("documents").limitToLast(19).orderByChild("negative_timestamp").on("child_added", function (snapshot)
 				{
 					docTitles.push(snapshot.val().title)
 				})
 
-				peerRef.child("documents").child("active").once("value", function (snapshot)
+				peerRef.child("documents").once("value", function (snapshot)
 				{
 					docTitles.push("🔙 To Peer Review")
 					let ReviewDocumentString = Bot.Message.text("Here are all the documents submitted for reviewal. Click on one to be sent to its page.").addResponseKeyboard(docTitles)
@@ -3254,7 +3255,12 @@
 					{
 						let data = {}
 						data["url"] = message.body
-						peerRef.child("pending").child(message.from).update(data)
+						data["from"] = message.from
+
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+						peerRef.child("pending").child(usersEncodedUsername).update(data)
 
 						userRef.update(
 						{
@@ -3304,22 +3310,18 @@
 					if (message.body == "Yes")
 					{
 						let docRef = peerRef.child("documents").push()
-						var data = {}
 
 						var usersEncodedUsername = message.from
 						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-						peerRef.child("documents").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
+						peerRef.child("pending").child(usersEncodedUsername).once("value", function (snapshot)
 						{
-							var data = {}
-							data["timestamp"] = (new Date() / 1000)
-							data["url"] = snapshot.val().url
-							data["title"] = snapshot.val().title
-							data["from"] = message.from
+							var data = snapshot.val()
+							data["negative_timestamp"] = (new Date() / 1000)
 							docRef.update(data)
-							peerRef.child("documents").child("pending").child(usersEncodedUsername).set(null)
+
+
+							peerRef.child("pending").child(usersEncodedUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
@@ -3332,8 +3334,8 @@
 										context: "home"
 									})
 
-									usersRef.off("child_added")
-									getContextMessage(message, "more", function (contextMessage)
+									usersRef.off("peer_review")
+									getContextMessage(message, "peer_review", function (contextMessage)
 									{
 										bot.send(["Your document has been submitted! Make sure that people with access to the URL can make suggestions on the document.", contextMessage], message.from)
 									})
@@ -3368,21 +3370,27 @@
 					var titleMatch = false
 
 					var docRef = peerRef.child("documents")
-					peerRef.child("documents").child("active").on("child_added", function (snapshot)
+
+					peerRef.child("documents").on("child_added", function (snapshot)
 					{
 						if (snapshot.val().title == message.body)
 						{
 							titleMatch = true
-							docRef = peerRef.child("documents").child("active").child(snapshot.key)
+							docRef = peerRef.child("documents").child(snapshot.key)
 						}
 					})
 
-					peerRef.child("documents").child("active").once("value", function (snapshot)
+					docRef.once("value", function (snapshot)
 					{
-						if (titleMatch == true)
+						if (titleMatch)
 						{
+							let reviewMessage = "Here is the URL to the document. Please make sure to tell " + snapshot.val().from + " that you reviewed their document after you're done."
+							let urlMessage = Bot.Message.link(snapshot.val().url)
 
-							bot.send(["Here is the URL to the document. Please make sure to tell " + snapshot.val().from + " that you reviewed their document after you're done.", snapshot.val().url], message.from)
+							getContextMessage(message, "review_document", function (contextMessage)
+							{
+								bot.send([reviewMessage, urlMessage, contextMessage], message.from)
+							})
 
 						}
 						else
