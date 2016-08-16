@@ -9,7 +9,7 @@
 
 	let bot = new Bot(
 	{
-		username: 'bhsacademybot',
+		username: 'bhsacademybot_dev',
 		apiKey: '1c744fe4-c975-4036-acc5-77663632c1a3',
 		baseUrl: 'http://ec2-52-41-29-101.us-west-2.compute.amazonaws.com',
 		manuallySendReadReceipts: true
@@ -29,9 +29,10 @@
 	var announcementsRef = database.ref("/announcements")
 	var votingRef = database.ref("/voting")
 	var feedbackRef = database.ref("/feedback")
+	var peerRef = database.ref("/peer_review")
 
-	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More"]
-	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More", "🔒 Admin Actions"]
+	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "📄 Peer Review", "🗂 More"]
+	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "📄 Peer Review", "🗂 More", "🔒 Admin Actions"]
 
 	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function ()
 	{
@@ -472,6 +473,46 @@
 
 				callback(moreString)
 				break
+
+			case "peer_review":
+				let PeerReviewString = Bot.Message.text("What would you like to do?").addResponseKeyboard(["Review a Document", "Submit a Document", "🏠 Back to home"])
+
+				callback(PeerReviewString)
+				break
+
+			case "submit_document":
+				let SubmitDocumentURLString = Bot.Message.text("Please paste the URL of the document below.").addResponseKeyboard(["Cancel"], true)
+
+				callback(SubmitDocumentURLString)
+				break
+
+			case "submit_document_title":
+				let SubmitDocumentTitleString = Bot.Message.text("What is the title of the document?").addResponseKeyboard(["Cancel"], true)
+
+				callback(SubmitDocumentTitleString)
+				break
+
+			case "confirm_submit_document":
+				let ConfirmSubmitDocumentString = Bot.Message.text("Is this information correct?").addResponseKeyboard(["Yes", "No"])
+
+				callback(ConfirmSubmitDocumentString)
+				break
+
+			case "review_document":
+				var docTitles = []
+				peerRef.child("documents").limitToLast(19).orderByChild("negative_timestamp").on("child_added", function (snapshot)
+				{
+					docTitles.push(snapshot.val().title)
+				})
+
+				peerRef.child("documents").once("value", function (snapshot)
+				{
+					docTitles.push("🔙 To Peer Review")
+					let ReviewDocumentString = Bot.Message.text("Here are all the documents submitted for reviewal. Click on one to be sent to its page.").addResponseKeyboard(docTitles)
+
+					callback(ReviewDocumentString)
+				})
+				break
 		}
 	}
 
@@ -839,6 +880,26 @@
 							})
 
 							getContextMessage(message, "more", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						case "📄 Peer Review":
+						case "📄 peer Review":
+						case "📄 Peer review":
+						case "📄 peer review":
+						case "📄":
+						case "Peer Review":
+						case "peer Review":
+						case "Peer review":
+						case "peer review":
+							userRef.update(
+							{
+								context: "peer_review"
+							})
+
+							getContextMessage(message, "peer_review", function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2571,6 +2632,7 @@
 						var data = {}
 						timestamp["negative_timestamp"] = (new Date() / 1000) * -1
 						pollRef.update(timestamp)
+
 						votingRef.child("pending").child(message.from).child("items").on("child_added", function (snapshot)
 						{
 							data[snapshot.key] = 0
@@ -3125,6 +3187,237 @@
 							bot.send(contextMessage, message.from)
 						})
 					}
+					break
+
+				case "peer_review":
+					switch (message.body)
+					{
+						case "Review a Document":
+							userRef.update(
+							{
+								context: "review_document"
+							})
+
+							getContextMessage(message, "review_document", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						case "Submit a Document":
+							userRef.update(
+							{
+								context: "submit_document"
+							})
+
+							getContextMessage(message, "submit_document", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						case "🏠 Back to home":
+							userRef.update(
+							{
+								context: "home"
+							})
+
+							getContextMessage(message, "home", function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+
+						default:
+							getContextMessage(message, context, function (contextMessage)
+							{
+								bot.send(contextMessage, message.from)
+							})
+							break
+					}
+					break
+
+				case "submit_document":
+					if (message.body == "Cancel")
+					{
+						peerRef.child("pending").child(message.from).set(null)
+						userRef.update(
+						{
+							context: "peer_review"
+						})
+
+						getContextMessage(message, "peer_review", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						let data = {}
+						data["url"] = message.body
+						data["from"] = message.from
+
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+						peerRef.child("pending").child(usersEncodedUsername).update(data)
+
+						userRef.update(
+						{
+							context: "submit_document_title"
+						})
+
+						getContextMessage(message, "submit_document_title", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
+				case "submit_document_title":
+					if (message.body == "Cancel")
+					{
+						peerRef.child("pending").child(message.from).set(null)
+						userRef.update(
+						{
+							context: "submit_document"
+						})
+
+						getContextMessage(message, "submit_document", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						let data = {}
+						data["title"] = message.body
+						peerRef.child("pending").child(message.from).update(data)
+
+						userRef.update(
+						{
+							context: "confirm_submit_document"
+						})
+
+						getContextMessage(message, "confirm_submit_document", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
+				case "confirm_submit_document":
+					if (message.body == "Yes")
+					{
+						let docRef = peerRef.child("documents").push()
+
+						var usersEncodedUsername = message.from
+						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
+
+						peerRef.child("pending").child(usersEncodedUsername).once("value", function (snapshot)
+						{
+							var data = snapshot.val()
+							data["negative_timestamp"] = (new Date() / 1000)
+							docRef.update(data)
+
+
+							peerRef.child("pending").child(usersEncodedUsername).set(null)
+
+							usersRef.on("child_added", function (snapshot)
+							{
+
+								usersRef.once("value", function (snapshot)
+								{
+
+									userRef.update(
+									{
+										context: "home"
+									})
+
+									usersRef.off("peer_review")
+									getContextMessage(message, "peer_review", function (contextMessage)
+									{
+										bot.send(["Your document has been submitted! Make sure that people with access to the URL can make suggestions on the document.", contextMessage], message.from)
+									})
+								})
+							})
+						})
+					}
+					else if (message.body == "No")
+					{
+						peerRef.child("pending").child(message.from).set(null)
+						userRef.update(
+						{
+							context: "submit_document"
+						})
+
+						getContextMessage(message, "submit_document", function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					else
+					{
+						getContextMessage(message, context, function (contextMessage)
+						{
+							bot.send(contextMessage, message.from)
+						})
+					}
+					break
+
+				case "review_document":
+					var docTitles = []
+					var titleMatch = false
+
+					var docRef = peerRef.child("documents")
+
+					peerRef.child("documents").on("child_added", function (snapshot)
+					{
+						if (snapshot.val().title == message.body)
+						{
+							titleMatch = true
+							docRef = peerRef.child("documents").child(snapshot.key)
+						}
+					})
+
+					docRef.once("value", function (snapshot)
+					{
+						if (titleMatch)
+						{
+							let reviewMessage = "Here is the URL to the document. Please make sure to tell " + snapshot.val().from + " that you reviewed their document after you're done."
+							let urlMessage = Bot.Message.link(snapshot.val().url)
+
+							getContextMessage(message, "review_document", function (contextMessage)
+							{
+								bot.send([reviewMessage, urlMessage, contextMessage], message.from)
+							})
+
+						}
+						else
+						{
+							switch (message.body)
+							{
+								case "🔙 To Peer Review":
+									userRef.update(
+									{
+										context: "peer_review"
+									})
+
+									getContextMessage(message, "peer_review", function (contextMessage)
+									{
+										bot.send([contextMessage], message.from)
+									})
+									break
+
+								default:
+									getContextMessage(message, context, function (contextMessage)
+									{
+										bot.send([contextMessage], message.from)
+									})
+									break
+							}
+						}
+					})
 					break
 
 				default:
