@@ -11,7 +11,7 @@
 	var contents = fs.readFileSync("KikBotKeys.json");
 	var jsonContent = JSON.parse(contents);
 
-	botData = {}
+	var botData = {}
 	botData[username] = "bhsacademybot"
 	botData[apiKey] = jsonContent.apiKey
 	botData[baseUrl] = jsonContent.baseUrl
