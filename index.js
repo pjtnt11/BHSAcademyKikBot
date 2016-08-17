@@ -12,10 +12,10 @@
 	var jsonContent = JSON.parse(contents);
 
 	var botData = {}
-	botData[username] = "bhsacademybot"
-	botData[apiKey] = jsonContent.apiKey
-	botData[baseUrl] = jsonContent.baseUrl
-	botData[manuallySendReadReceipts] = true
+	botData["username"] = "bhsacademybot"
+	botData["apiKey"] = jsonContent.apiKey
+	botData["baseUrl"] = jsonContent.baseUrl
+	botData["manuallySendReadReceipts"] = true
 
 	var bot = new Bot(botData)
 
