@@ -11,11 +11,11 @@
 	var contents = fs.readFileSync("KikBotKeys.json");
 	var jsonContent = JSON.parse(contents);
 
-	botData = {}
-	botData[username] = "bhsacademybot"
-	botData[apiKey] = jsonContent.apiKey
-	botData[baseUrl] = jsonContent.baseUrl
-	botData[manuallySendReadReceipts] = true
+	var botData = {}
+	botData["username"] = "bhsacademybot"
+	botData["apiKey"] = jsonContent.apiKey
+	botData["baseUrl"] = jsonContent.baseUrl
+	botData["manuallySendReadReceipts"] = true
 
 	var bot = new Bot(botData)
 
@@ -169,7 +169,7 @@
 				break
 
 			case "add_homework_item":
-				let addHomeworkItemString = Bot.Message.text("What class are you adding homework for?").addResponseKeyboard(["Physics", "Math", "PLTW-POE (Cotie)", "PLTW-POE (Stevens)", "PLTW-DE", "English (Warczynski)", "English (Brach)", "English (Flanagan)", "English (Miserendino)", "Health (Simons)", "Cancel"])
+				let addHomeworkItemString = Bot.Message.text("What class are you adding homework for?").addResponseKeyboard(["Physics", "Math", "PLTW-POE (Cotie)", "PLTW-POE (Stevens)", "PLTW-DE", "English (Warczynski)", "English (Brach)", "English (Miserendino)", "Health (Simons)", "Cancel"])
 
 				callback(addHomeworkItemString)
 				break
