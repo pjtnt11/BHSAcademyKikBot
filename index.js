@@ -2327,13 +2327,13 @@
 
 						if (message.body == "Yes")
 						{
-							updateContext(message, usersEncodedUsername, "add_homework_item_body")
+							updateContext(message, encodedMessageFromUsername, "add_homework_item_body")
 						}
 						else if (message.body == "No")
 						{
 							homeworkRef.child("pending_items").child(encodedMessageFromUsername).set(null)
 
-							updateContext(message, usersEncodedUsername, "homework_actions")
+							updateContext(message, encodedMessageFromUsername, "homework_actions")
 						}
 						else
 						{
