@@ -6,13 +6,12 @@
 	var Bot = require('@kikinteractive/kik')
 	var firebase = require('firebase')
 	var schedule = require('node-schedule')
-	var moment = require('moment')
 
 	var contents = fs.readFileSync("KikBotKeys.json");
 	var jsonContent = JSON.parse(contents);
 
 	botData = {}
-	botData[username] = "bhsacademybot"
+	botData[username] = jsonContent.username
 	botData[apiKey] = jsonContent.apiKey
 	botData[baseUrl] = jsonContent.baseUrl
 	botData[manuallySendReadReceipts] = true
