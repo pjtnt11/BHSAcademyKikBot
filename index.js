@@ -106,6 +106,21 @@
 		})
 	}
 
+	function updateContext(message, user, context)
+	{
+		var data = {}
+		data["context"] = context
+		usersRef.child(user).update(data)
+
+		getContextMessage(message, context, function (contextMessage)
+		{
+			if (contextMessage != null)
+			{
+				bot.send(contextMessage, message.from)
+			}
+		})
+	}
+
 	function resendContextMessage(message, context)
 	{
 		getContextMessage(message, context, function (contextMessage)
@@ -703,15 +718,7 @@
 				data["from"] = message.picked[0]
 				announcementsRef.child("pending").child(encodedMessageFromUsername).update(data)
 
-				userRef.update(
-				{
-					context: "confirm_make_announcement"
-				})
-
-				getContextMessage(message, "confirm_make_announcement", function (contextMessage)
-				{
-					bot.send(contextMessage, message.from)
-				})
+				updateContext(message, encodedMessageFromUsername, "confirm_make_announcement")
 			}
 			else
 			{
@@ -841,47 +848,13 @@
 							break
 
 						case "🗂 More":
-						case "🗂 more":
-						case "More":
-						case "more":
-
-							userRef.update(
-							{
-								context: "more"
-							})
-
-							getContextMessage(message, "more", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "more")
 							break
 
 						case "📄 Peer Review":
-						case "📄 peer Review":
-						case "📄 Peer review":
-						case "📄 peer review":
-						case "📄":
-						case "Peer Review":
-						case "peer Review":
-						case "Peer review":
-						case "peer review":
-							userRef.update(
-							{
-								context: "peer_review"
-							})
-
-							getContextMessage(message, "peer_review", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "peer_review")
 							break
 
-						case "Admin Actions":
-						case "admin actions":
-						case "Admin actions":
-						case "🔒":
-						case "🔒 admin actions":
-						case "🔒 Admin actions":
 						case "🔒 Admin Actions":
 
 							adminCheck(message, function (is_admin)
@@ -890,22 +863,11 @@
 								{
 									let adminNoteString = Bot.Message.text("Note: Only admins can access this page. If you want to see a list of the current admins, use the \"admins\" command")
 
-									userRef.update(
-									{
-										context: "admin_actions"
-									})
-
-									getContextMessage(message, "admin_actions", function (contextMessage)
-									{
-										bot.send([adminNoteString, contextMessage], message.from)
-									})
+									updateContext(message, encodedMessageFromUsername, "confirm_make_announcement")
 								}
 								else
 								{
-									getContextMessage(message, context, function (contextMessage)
-									{
-										bot.send(contextMessage, message.from)
-									})
+									resendContextMessage(message, context)
 								}
 							})
 
@@ -953,43 +915,15 @@
 							break
 
 						case "📢 Announcements":
-						case "📢 announcements":
-						case "announcements":
-						case "Announcements":
-							userRef.update(
-							{
-								context: "announcements"
-							})
-
-							getContextMessage(message, "announcements", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "announcements")
 							break
 
 						case "🗳 Voting":
-						case "🗳 voting":
-						case "voting":
-							userRef.update(
-							{
-								context: "voting_options"
-							})
-
-							getContextMessage(message, "voting_options", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "voting_options")
 							break
 
 						default:
-							//sendErrorMessage(message, "default")
-							getContextMessage(message, context, function (contextMessage)
-							{
-								if (contextMessage !== null)
-								{
-									bot.send(contextMessage, message.from)
-								}
-							})
+							resendContextMessage(message, context)
 							break
 					}
 					///////////////////////////////
