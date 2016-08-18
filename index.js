@@ -863,7 +863,7 @@
 								{
 									let adminNoteString = Bot.Message.text("Note: Only admins can access this page. If you want to see a list of the current admins, use the \"admins\" command")
 
-									updateContext(message, encodedMessageFromUsername, "confirm_make_announcement")
+									updateContext(message, encodedMessageFromUsername, "admin_actions")
 								}
 								else
 								{
