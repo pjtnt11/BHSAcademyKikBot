@@ -106,6 +106,14 @@
 		})
 	}
 
+	function resendContextMessage(message, context)
+	{
+		getContextMessage(message, context, function (contextMessage)
+		{
+			bot.send(contextMessage, message.from)
+		})
+	}
+
 	function getContextMessage(message, context, callback)
 	{
 		var encodedMessageFromUsername = message.from
@@ -636,10 +644,7 @@
 			}
 			else
 			{
-				getContextMessage(message, snapshot.val(), function (contextMessage)
-				{
-					bot.send(contextMessage, message.from)
-				})
+				resendContextMessage(message, snapshot.val())
 			}
 		})
 	})
@@ -665,10 +670,7 @@
 
 		userRef.child("context").once("value", function (snapshot)
 		{
-			getContextMessage(message, snapshot.val(), function (contextMessage)
-			{
-				bot.send(contextMessage, message.from)
-			})
+			resendContextMessage(message, snapshot.val())
 		})
 	})
 
@@ -713,10 +715,7 @@
 			}
 			else
 			{
-				getContextMessage(message, context, function (contextMessage)
-				{
-					bot.send(contextMessage, message.from)
-				})
+				resendContextMessage(message, snapshot.val())
 			}
 		})
 	})
@@ -742,10 +741,7 @@
 
 		userRef.child("context").once("value", function (snapshot)
 		{
-			getContextMessage(message, snapshot.val(), function (contextMessage)
-			{
-				bot.send(contextMessage, message.from)
-			})
+			resendContextMessage(message, snapshot.val())
 		})
 	})
 
@@ -770,10 +766,7 @@
 
 		userRef.child("context").once("value", function (snapshot)
 		{
-			getContextMessage(message, snapshot.val(), function (contextMessage)
-			{
-				bot.send(contextMessage, message.from)
-			})
+			resendContextMessage(message, snapshot.val())
 		})
 	})
 
@@ -1130,7 +1123,6 @@
 							break
 
 						default:
-							//sendErrorMessage(message)
 							getContextMessage(message, context, function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
@@ -1205,10 +1197,8 @@
 							break
 
 						default:
-							getContextMessage(message, context, function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							resendContextMessage(message, context)
+							break
 					}
 					break
 					///////////////////////////////
@@ -1342,10 +1332,7 @@
 							break
 
 						default:
-							getContextMessage(message, context, function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							resendContextMessage(message, context)
 							break
 					}
 					break
@@ -1420,10 +1407,7 @@
 									break
 
 								default:
-									getContextMessage(message, context, function (contextMessage)
-									{
-										bot.send([contextMessage], message.from)
-									})
+									resendContextMessage(message, context)
 									break
 							}
 						}
@@ -1456,7 +1440,6 @@
 									else
 									{
 										bot.send([announcementString, picture], message.from)
-
 									}
 								})
 							}
@@ -1498,10 +1481,7 @@
 							}
 							else
 							{
-								getContextMessage(message, context, function (contextMessage)
-								{
-									bot.send(contextMessage, message.from)
-								})
+								resendContextMessage(message, context)
 							}
 						}
 					})
@@ -1602,10 +1582,7 @@
 							}
 							else
 							{
-								getContextMessage(message, context, function (contextMessage)
-								{
-									bot.send([contextMessage], message.from)
-								})
+								resendContextMessage(message, context)
 							}
 						})
 					}
@@ -1731,14 +1708,9 @@
 							break
 
 						default:
-							getContextMessage(message, context, function (contextMessage)
-							{
-								bot.send([contextMessage], message.from)
-							})
-
+							resendContextMessage(message, context)
 							break
 					}
-
 					break
 
 				case "add_poll_title":
@@ -1757,10 +1729,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					else
 					{
@@ -1863,10 +1832,7 @@
 							break
 
 						default:
-							getContextMessage(message, context, function (contextMessage)
-							{
-								bot.send([contextMessage], message.from)
-							})
+							resendContextMessage(message, context)
 							break
 					}
 					break
@@ -1904,10 +1870,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -1947,10 +1910,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -1990,10 +1950,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -2033,10 +1990,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -2126,10 +2080,7 @@
 									break
 
 								default:
-									getContextMessage(message, context, function (contextMessage)
-									{
-										bot.send([contextMessage], message.from)
-									})
+									resendContextMessage(message, context)
 									break
 							}
 						}
@@ -2172,10 +2123,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -2221,10 +2169,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					else
 					{
@@ -2266,10 +2211,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					else
 					{
@@ -2314,10 +2256,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					else
 					{
@@ -2363,10 +2302,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -2389,10 +2325,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					else
 					{
@@ -2427,10 +2360,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -2453,10 +2383,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					else
 					{
@@ -2489,10 +2416,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -2524,10 +2448,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
@@ -2559,10 +2480,7 @@
 					}
 					else if (message.body == "Dismiss")
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					else
 					{
@@ -2661,10 +2579,7 @@
 					}
 					else
 					{
-						getContextMessage(message, context, function (contextMessage)
-						{
-							bot.send(contextMessage, message.from)
-						})
+						resendContextMessage(message, context)
 					}
 					break
 
