@@ -7,14 +7,14 @@
 	var firebase = require('firebase')
 	var schedule = require('node-schedule')
 
-	var contents = fs.readFileSync("KikBotKeys.json");
+	var contents = fs.readFileSync("BHSAcademyBot.json");
 	var jsonContent = JSON.parse(contents);
 
-	botData = {}
-	botData[username] = jsonContent.username
-	botData[apiKey] = jsonContent.apiKey
-	botData[baseUrl] = jsonContent.baseUrl
-	botData[manuallySendReadReceipts] = true
+	var botData = {}
+	botData["username"] = jsonContent.username
+	botData["apiKey"] = jsonContent.apiKey
+	botData["baseUrl"] = jsonContent.baseUrl
+	botData["manuallySendReadReceipts"] = true
 
 	var bot = new Bot(botData)
 
@@ -45,10 +45,10 @@
 		{
 			if (snapshot.val().subscribed == true)
 			{
-				var UsersDecodedUsername = snapshot.key
-				UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
+				var decodedMessageFromUsername = snapshot.key
+				decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 
-				users.push(UsersDecodedUsername)
+				users.push(decodedMessageFromUsername)
 			}
 		})
 
@@ -86,14 +86,12 @@
 	{
 		var data = {}
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
-		data[usersEncodedUsername] = {
+		data[encodedMessageFromUsername] = {
 			context: "home",
 			is_admin: false,
 			subscribed: true
@@ -110,12 +108,10 @@
 
 	function getContextMessage(message, context, callback)
 	{
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		switch (context)
 		{
@@ -410,14 +406,12 @@
 				var votingItems = []
 				votingRef.child("polls").child("active").on("child_added", function (snapshot)
 				{
-					var usersEncodedUsername = message.from
-					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-					usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-					usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+					var encodedMessageFromUsername = message.from
+					encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-					if (snapshot.child("voters").child(usersEncodedUsername).exists())
+					if (snapshot.child("voters").child(encodedMessageFromUsername).exists())
 					{
-						if (snapshot.child("voters").child(usersEncodedUsername).val() == "pending")
+						if (snapshot.child("voters").child(encodedMessageFromUsername).val() == "pending")
 						{
 							userVotePendingFound = true
 							userVotePendingKey = snapshot.key
@@ -431,9 +425,9 @@
 					{
 						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").on("child_added", function (snapshot)
 						{
-							var UsersDecodedUsername = snapshot.key
-							UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
-							votingItems.push(UsersDecodedUsername)
+							var decodedMessageFromUsername = snapshot.key
+							decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
+							votingItems.push(decodedMessageFromUsername)
 						})
 
 						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").once("value", function (snapshot)
@@ -539,12 +533,10 @@
 
 	function adminCheck(message, callback)
 	{
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 		userRef.child("is_admin").once("value", function (snapshot)
 		{
 			callback(snapshot.val())
@@ -585,12 +577,10 @@
 
 		console.log(message.from + "\: \(started chatting\)")
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		let sendingMessage = Bot.Message.text("Welcome to the Bartlett High School Academy Kik Bot!\n\nWith this bot you will be able to vote on current topics, receive daily homework information and get notified of announcements.\n\nThis bot was created from scratch by Patrick Stephen so if you have any questions, contact him at @pjtnt11")
 
@@ -613,12 +603,10 @@
 
 		console.log(message.from + ": (picture message) " + message.picUrl)
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -634,7 +622,7 @@
 			{
 				var announcementData = {}
 				announcementData["picture_url"] = message.picUrl
-				announcementsRef.child("pending").child(message.from).update(announcementData)
+				announcementsRef.child("pending").child(encodedMessageFromUsername).update(announcementData)
 
 				userRef.update(
 				{
@@ -658,13 +646,10 @@
 
 	bot.onVideoMessage((message) =>
 	{
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -690,12 +675,10 @@
 	bot.onFriendPickerMessage((message) =>
 	{
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -716,7 +699,7 @@
 			{
 				var data = {}
 				data["from"] = message.picked[0]
-				announcementsRef.child("pending").child(message.from).update(data)
+				announcementsRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 				userRef.update(
 				{
@@ -740,13 +723,10 @@
 
 	bot.onScanDataMessage((message) =>
 	{
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -771,13 +751,10 @@
 
 	bot.onStickerMessage((message) =>
 	{
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		userRef.once("value", function (snapshot)
 		{
@@ -809,12 +786,10 @@
 			message.markRead()
 		}
 
-		var usersEncodedUsername = message.from
-		usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-		usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-		usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
+		var encodedMessageFromUsername = message.from
+		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-		let userRef = usersRef.child(usersEncodedUsername)
+		let userRef = usersRef.child(encodedMessageFromUsername)
 
 		userRef.child("context").once("value", function (snapshot)
 		{
@@ -1395,17 +1370,12 @@
 						if (titleMatch == true)
 						{
 
-							var usersEncodedUsername = message.from
-							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-							pollRef.child("voters").child(usersEncodedUsername).once("value", function (snapshot)
+							pollRef.child("voters").child(encodedMessageFromUsername).once("value", function (snapshot)
 							{
 								if (!snapshot.exists())
 								{
 									var data = {}
-									data[usersEncodedUsername] = "pending"
+									data[encodedMessageFromUsername] = "pending"
 									pollRef.child("voters").update(data)
 
 									userRef.update(
@@ -1547,14 +1517,10 @@
 
 						votingRef.child("polls").child("active").on("child_added", function (snapshot)
 						{
-							var usersEncodedUsername = message.from
-							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-							if (snapshot.child("voters").child(usersEncodedUsername).exists())
+							if (snapshot.child("voters").child(encodedMessageFromUsername).exists())
 							{
-								if (snapshot.child("voters").child(usersEncodedUsername).val() == "pending")
+								if (snapshot.child("voters").child(encodedMessageFromUsername).val() == "pending")
 								{
 									userVotePendingFound = true
 									userVotePendingKey = snapshot.key
@@ -1566,7 +1532,7 @@
 						{
 							if (userVotePendingFound)
 							{
-								votingRef.child("polls").child("active").child(userVotePendingKey).child("voters").child(message.from).set(null)
+								votingRef.child("polls").child("active").child(userVotePendingKey).child("voters").child(encodedMessageFromUsername).set(null)
 							}
 						})
 
@@ -1589,16 +1555,12 @@
 					}
 					else
 					{
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 						votingRef.child("polls").child("active").on("child_added", function (snapshot)
 						{
-							if (snapshot.child("voters").child(usersEncodedUsername).exists())
+							if (snapshot.child("voters").child(encodedMessageFromUsername).exists())
 							{
-								if (snapshot.child("voters").child(usersEncodedUsername).val() == "pending")
+								if (snapshot.child("voters").child(encodedMessageFromUsername).val() == "pending")
 								{
 									userVotePendingFound = true
 									userVotePendingKey = snapshot.key
@@ -1622,13 +1584,8 @@
 								})
 								votingRef.child("polls").child("active").child(userVotePendingKey).child("items").update(VoteData)
 
-								var usersEncodedUsername = message.from
-								usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-								usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-								usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
 								var VoterData = {}
-								VoterData[usersEncodedUsername] = message.body
+								VoterData[encodedMessageFromUsername] = message.body
 
 								votingRef.child("polls").child("active").child(userVotePendingKey).child("voters").update(VoterData)
 
@@ -1787,7 +1744,7 @@
 				case "add_poll_title":
 					if (message.body == "Cancel")
 					{
-						votingRef.child("pending").child(message.from).set(null)
+						votingRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "voting_actions"
@@ -1809,7 +1766,7 @@
 					{
 						let data = {}
 						data["title"] = message.body
-						votingRef.child("pending").child(message.from).update(data)
+						votingRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 						userRef.update(
 						{
@@ -1933,7 +1890,7 @@
 					}
 					else if (message.body == "No")
 					{
-						homeworkRef.child("pending_items").child(message.from).set(null)
+						homeworkRef.child("pending_items").child(encodedMessageFromUsername).set(null)
 
 						userRef.update(
 						{
@@ -2106,9 +2063,9 @@
 
 								if (snapshot.val() == "pending")
 								{
-									var UsersDecodedUsername = snapshot.key
-									UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
-									pendingVoters.push(UsersDecodedUsername)
+									var decodedMessageFromUsername = snapshot.key
+									decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
+									pendingVoters.push(decodedMessageFromUsername)
 								}
 							})
 
@@ -2290,11 +2247,11 @@
 						let addedHomeworkConfirmation = "Homework item added"
 						var homeworkData = {}
 
-						homeworkRef.child("pending_items").child(message.from).once("value", function (snapshot)
+						homeworkRef.child("pending_items").child(encodedMessageFromUsername).once("value", function (snapshot)
 						{
 							homeworkData[snapshot.val()] = message.body
 							homeworkRef.child("items").update(homeworkData)
-							homeworkRef.child("pending_items").child(message.from).set(null)
+							homeworkRef.child("pending_items").child(encodedMessageFromUsername).set(null)
 						})
 
 						userRef.update(
@@ -2392,7 +2349,7 @@
 					}
 					else if (message.body == "No")
 					{
-						homeworkRef.child("pending_items").child(message.from).set(null)
+						homeworkRef.child("pending_items").child(encodedMessageFromUsername).set(null)
 
 						userRef.update(
 						{
@@ -2418,7 +2375,7 @@
 					{
 						var announcementData = {}
 						announcementData["title"] = message.body
-						announcementsRef.child("pending").child(message.from).update(announcementData)
+						announcementsRef.child("pending").child(encodedMessageFromUsername).update(announcementData)
 
 						userRef.update(
 						{
@@ -2456,7 +2413,7 @@
 					{
 						var data = {}
 						data["from"] = message.from
-						announcementsRef.child("pending").child(message.from).update(data)
+						announcementsRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 						userRef.update(
 						{
@@ -2482,7 +2439,7 @@
 					{
 						var announcementData = {}
 						announcementData["body"] = message.body
-						announcementsRef.child("pending").child(message.from).update(announcementData)
+						announcementsRef.child("pending").child(encodedMessageFromUsername).update(announcementData)
 
 						userRef.update(
 						{
@@ -2503,7 +2460,7 @@
 					}
 					else
 					{
-						announcementsRef.child("pending").child(message.from).set(null)
+						announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "admin_actions"
@@ -2519,7 +2476,7 @@
 				case "add_announcement_image":
 					if (message.body == "Cancel")
 					{
-						announcementsRef.child("pending").child(message.from).set(null)
+						announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "admin_actions"
@@ -2577,7 +2534,7 @@
 				case "create_a_poll":
 					if (message.body == "Cancel")
 					{
-						votingRef.child("pending").child(message.from).set(null)
+						votingRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "voting_actions"
@@ -2614,14 +2571,10 @@
 						encodedVoteResponce = encodedVoteResponce.replace(/\$/g, "%24")
 						encodedVoteResponce = encodedVoteResponce.replace(/#/g, "%23")
 
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 						let data = {}
 
 						data[encodedVoteResponce] = true
-						votingRef.child("pending").child(usersEncodedUsername).child("items").update(data)
+						votingRef.child("pending").child(encodedMessageFromUsername).child("items").update(data)
 
 						bot.send(Bot.Message.text("\"" + message.body + "\" added").addResponseKeyboard(["Done", "Cancel"], true), message.from)
 					}
@@ -2636,22 +2589,17 @@
 						timestamp["negative_timestamp"] = (new Date() / 1000) * -1
 						pollRef.update(timestamp)
 
-						votingRef.child("pending").child(message.from).child("items").on("child_added", function (snapshot)
+						votingRef.child("pending").child(encodedMessageFromUsername).child("items").on("child_added", function (snapshot)
 						{
 							data[snapshot.key] = 0
 							pollRef.child("items").update(data)
 						})
 
-						votingRef.child("pending").child(message.from).child("title").once("value", function (snapshot)
+						votingRef.child("pending").child(encodedMessageFromUsername).child("title").once("value", function (snapshot)
 						{
 							let makeAnnouncement = false
 
-							var usersEncodedUsername = message.from
-							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-							votingRef.child("pending").child(usersEncodedUsername).child("make_announcement").once("value", function (snapshot)
+							votingRef.child("pending").child(encodedMessageFromUsername).child("make_announcement").once("value", function (snapshot)
 							{
 								let makeAnnouncement = snapshot.val()
 							})
@@ -2660,23 +2608,19 @@
 							data["title"] = snapshot.val()
 							data["from"] = message.from
 							pollRef.update(data)
-							votingRef.child("pending").child(message.from).set(null)
+							votingRef.child("pending").child(encodedMessageFromUsername).set(null)
 
 							var subscribers = []
 
 							usersRef.on("child_added", function (snapshot)
 							{
-								var usersEncodedUsername = message.from
-								usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-								usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-								usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
-								if (snapshot.val().subscribed == true && snapshot.key !== usersEncodedUsername)
+								if (snapshot.val().subscribed == true && snapshot.key !== encodedMessageFromUsername)
 								{
-									var UsersDecodedUsername = snapshot.key
-									UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
+									var decodedMessageFromUsername = snapshot.key
+									decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 
-									subscribers.push(UsersDecodedUsername)
+									subscribers.push(decodedMessageFromUsername)
 								}
 							})
 
@@ -2689,10 +2633,6 @@
 								})
 
 								usersRef.off("child_added")
-								var usersEncodedUsername = message.from
-								usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-								usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-								usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 								let votingAnnouncementString = Bot.Message.text("A new poll has been created by @" + message.from + " with the question \"" + data["title"] + "\" go cast your vote in the voting menu!").addResponseKeyboard(["Dismiss"])
 								if (makeAnnouncement)
@@ -2708,7 +2648,7 @@
 					}
 					else if (message.body == "No")
 					{
-						votingRef.child("pending").child(message.from).set(null)
+						votingRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "voting_actions"
@@ -2731,15 +2671,11 @@
 				case "ask_make_poll_announcement":
 					if (message.body == "Yes")
 					{
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 
 						var data = {}
 						data["make_announcement"] = true
 
-						votingRef.child("pending").child(usersEncodedUsername).update(data)
+						votingRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 						userRef.update(
 						{
@@ -2753,13 +2689,9 @@
 					}
 					else if (message.body == "No")
 					{
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
 						var data = {}
 						data["make_announcement"] = false
-						votingRef.child("pending").child(usersEncodedUsername).update(data)
+						votingRef.child("pending").child(encodedMessageFromUsername).update(data)
 						userRef.update(
 						{
 							context: "confirm_create_poll"
@@ -2846,13 +2778,7 @@
 						if (titleMatch == true)
 						{
 
-							var usersEncodedUsername = message.from
-
-							usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-							usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-							usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-							pollRef.child("voters").child(usersEncodedUsername).once("value", function (snapshot)
+							pollRef.child("voters").child(encodedMessageFromUsername).once("value", function (snapshot)
 							{
 								if (snapshot.exists())
 								{
@@ -2913,7 +2839,7 @@
 				case "confirm_make_announcement":
 					if (message.body == "Yes")
 					{
-						announcementsRef.child("pending").child(message.from).once("value", function (snapshot)
+						announcementsRef.child("pending").child(encodedMessageFromUsername).once("value", function (snapshot)
 						{
 
 							let announcementRef = announcementsRef.child("items").push()
@@ -2925,7 +2851,7 @@
 
 							announcementItems.push(Bot.Message.text("New announcement from @" + message.from + " - \n\n" + snapshot.val().title + ":\n\n" + snapshot.val().body).addResponseKeyboard(["Dismiss"]))
 
-							announcementsRef.child("pending").child(message.from).child("picture_url").once("value", function (snapshot)
+							announcementsRef.child("pending").child(encodedMessageFromUsername).child("picture_url").once("value", function (snapshot)
 							{
 								if (snapshot.exists())
 								{
@@ -2939,10 +2865,10 @@
 							{
 								if (snapshot.val().subscribed == true && snapshot.key !== message.from)
 								{
-									var UsersDecodedUsername = snapshot.key
-									UsersDecodedUsername = UsersDecodedUsername.replace(/%2E/g, "\.")
+									var decodedMessageFromUsername = snapshot.key
+									decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 
-									subscribers.push(UsersDecodedUsername)
+									subscribers.push(decodedMessageFromUsername)
 								}
 							})
 
@@ -2951,7 +2877,7 @@
 								usersRef.off("child_added")
 								bot.broadcast(announcementItems, subscribers)
 
-								announcementsRef.child("pending").child(message.from).set(null)
+								announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 
 								let announcementSentConfirmation = "Your announcement has been sent"
 								userRef.update(
@@ -2968,7 +2894,7 @@
 					}
 					else if (message.body == "No")
 					{
-						announcementsRef.child("pending").child(message.from).set(null)
+						announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 
 						userRef.update(
 						{
@@ -2992,14 +2918,9 @@
 				case "suggestion":
 					var suggestRef = feedbackRef.child("suggestions")
 
-					var usersEncodedUsername = message.from
-					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-					usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-					usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
 					if (message.body == "Cancel")
 					{
-						suggestRef.child("pending").child(usersEncodedUsername).set(null)
+						suggestRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "feedback"
@@ -3014,7 +2935,7 @@
 					{
 						let data = {}
 						data["body"] = message.body
-						suggestRef.child("pending").child(usersEncodedUsername).update(data)
+						suggestRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 						userRef.update(
 						{
@@ -3031,14 +2952,9 @@
 				case "complaint":
 					var complaintRef = feedbackRef.child("complaints")
 
-					var usersEncodedUsername = message.from
-					usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-					usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-					usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
 					if (message.body == "Cancel")
 					{
-						complaintRef.child("pending").child(usersEncodedUsername).set(null)
+						complaintRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "feedback"
@@ -3053,7 +2969,7 @@
 					{
 						let data = {}
 						data["body"] = message.body
-						complaintRef.child("pending").child(usersEncodedUsername).update(data)
+						complaintRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 						userRef.update(
 						{
@@ -3073,12 +2989,7 @@
 						let suggestRef = feedbackRef.child("suggestions").child("items").push()
 						var data = {}
 
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-						feedbackRef.child("suggestions").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
+						feedbackRef.child("suggestions").child("pending").child(encodedMessageFromUsername).child("body").once("value", function (snapshot)
 						{
 							var data = {}
 							data["timestamp"] = (new Date() / 1000)
@@ -3086,7 +2997,7 @@
 							data["from"] = message.from
 							suggestRef.update(data)
 
-							feedbackRef.child("suggestions").child("pending").child(usersEncodedUsername).set(null)
+							feedbackRef.child("suggestions").child("pending").child(encodedMessageFromUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
@@ -3110,7 +3021,7 @@
 					}
 					else if (message.body == "No")
 					{
-						feedbackRef.child("pending").child(message.from).set(null)
+						feedbackRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "suggestion"
@@ -3136,19 +3047,14 @@
 						let complaintRef = feedbackRef.child("complaints").child("items").push()
 						var data = {}
 
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-						usersEncodedUsername = usersEncodedUsername.replace(/\$/g, "%24")
-						usersEncodedUsername = usersEncodedUsername.replace(/#/g, "%23")
-
-						feedbackRef.child("complaints").child("pending").child(usersEncodedUsername).child("body").once("value", function (snapshot)
+						feedbackRef.child("complaints").child("pending").child(encodedMessageFromUsername).child("body").once("value", function (snapshot)
 						{
 							var data = {}
 							data["timestamp"] = (new Date() / 1000)
 							data["body"] = snapshot.val()
 							data["from"] = message.from
 							complaintRef.update(data)
-							feedbackRef.child("complaints").child("pending").child(usersEncodedUsername).set(null)
+							feedbackRef.child("complaints").child("pending").child(encodedMessageFromUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
@@ -3172,7 +3078,7 @@
 					}
 					else if (message.body == "No")
 					{
-						feedbackRef.child("pending").child(message.from).set(null)
+						feedbackRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "complaint"
@@ -3243,7 +3149,7 @@
 				case "submit_document":
 					if (message.body == "Cancel")
 					{
-						peerRef.child("pending").child(message.from).set(null)
+						peerRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "peer_review"
@@ -3260,10 +3166,7 @@
 						data["url"] = message.body
 						data["from"] = message.from
 
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-
-						peerRef.child("pending").child(usersEncodedUsername).update(data)
+						peerRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 						userRef.update(
 						{
@@ -3280,7 +3183,7 @@
 				case "submit_document_title":
 					if (message.body == "Cancel")
 					{
-						peerRef.child("pending").child(message.from).set(null)
+						peerRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "submit_document"
@@ -3295,7 +3198,7 @@
 					{
 						let data = {}
 						data["title"] = message.body
-						peerRef.child("pending").child(message.from).update(data)
+						peerRef.child("pending").child(encodedMessageFromUsername).update(data)
 
 						userRef.update(
 						{
@@ -3314,17 +3217,14 @@
 					{
 						let docRef = peerRef.child("documents").push()
 
-						var usersEncodedUsername = message.from
-						usersEncodedUsername = usersEncodedUsername.replace(/\./g, "%2E")
-
-						peerRef.child("pending").child(usersEncodedUsername).once("value", function (snapshot)
+						peerRef.child("pending").child(encodedMessageFromUsername).once("value", function (snapshot)
 						{
 							var data = snapshot.val()
 							data["negative_timestamp"] = (new Date() / 1000)
 							docRef.update(data)
 
 
-							peerRef.child("pending").child(usersEncodedUsername).set(null)
+							peerRef.child("pending").child(encodedMessageFromUsername).set(null)
 
 							usersRef.on("child_added", function (snapshot)
 							{
@@ -3348,7 +3248,7 @@
 					}
 					else if (message.body == "No")
 					{
-						peerRef.child("pending").child(message.from).set(null)
+						peerRef.child("pending").child(encodedMessageFromUsername).set(null)
 						userRef.update(
 						{
 							context: "submit_document"
