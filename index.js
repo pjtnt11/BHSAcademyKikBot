@@ -804,19 +804,11 @@
 				switch (message.body)
 				{
 					case "homework":
+					case "Homework":
+					case "HOMEWORK":
 						getHomeworkString(function (homeworkString)
 						{
-							getContextMessage(message, context, function (contextMessage)
-							{
-								if (contextMessage != null)
-								{
-									message.reply([Bot.Message.text(homeworkString), contextMessage])
-								}
-								else
-								{
-									message.reply([Bot.Message.text(homeworkString)])
-								}
-							})
+							message.reply([Bot.Message.text(homeworkString)])
 						})
 						break
 
@@ -829,31 +821,11 @@
 							{
 								let picture = Bot.Message.picture(snapshot.val().picture_url)
 
-								getContextMessage(message, context, function (contextMessage)
-								{
-									if (contextMessage !== null)
-									{
-										message.reply([announcementString, picture, contextMessage], message.from)
-									}
-									else
-									{
-										message.reply([announcementString, picture], message.from)
-									}
-								})
+								message.reply([announcementString, picture], message.from)
 							}
 							else
 							{
-								getContextMessage(message, context, function (contextMessage)
-								{
-									if (contextMessage !== null)
-									{
-										message.reply([announcementString, contextMessage], message.from)
-									}
-									else
-									{
-										message.reply([announcementString], message.from)
-									}
-								})
+								message.reply([announcementString], message.from)
 							}
 						})
 						break
@@ -880,17 +852,7 @@
 							numRegisteredUsers = snapshot.numChildren()
 							let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins")
 
-							getContextMessage(message, "more", function (contextMessage)
-							{
-								if (contextMessage != null)
-								{
-									message.reply([statsString, contextMessage], message.from)
-								}
-								else
-								{
-									message.reply([statsString], message.from)
-								}
-							})
+							message.reply([statsString], message.from)
 						})
 						break
 
@@ -909,18 +871,7 @@
 						{
 							adminsString = adminsString + "\n" + postAdminString
 							usersRef.off("child_added")
-
-							getContextMessage(message, context, function (contextMessage)
-							{
-								if (contextMessage != null)
-								{
-									message.reply([Bot.Message.text(adminsString), contextMessage])
-								}
-								else
-								{
-									message.reply([Bot.Message.text(adminsString)])
-								}
-							})
+							message.reply([Bot.Message.text(adminsString)])
 						})
 						break
 
