@@ -801,6 +801,7 @@
 			var context = snapshot.val()
 			if (message.mention == "bhsacademybot")
 			{
+				let mentionResponceKeyboard = ["Homework", "Latest Announcement", "Stats", "Admins"]
 				switch (message.body)
 				{
 					case "homework":
@@ -808,14 +809,15 @@
 					case "HOMEWORK":
 						getHomeworkString(function (homeworkString)
 						{
-							message.reply([Bot.Message.text(homeworkString)])
+							message.reply([Bot.Message.text(homeworkString).addResponseKeyboard(mentionResponceKeyboard)])
 						})
 						break
 
 					case "latest announcement":
+					case "Latest Announcement":
 						announcementsRef.child("items").limitToLast(1).once("child_added", function (snapshot)
 						{
-							let announcementString = "Announcement from @" + snapshot.val().from + " - \n\n" + snapshot.val().title + ":\n\n" + snapshot.val().body
+							let announcementString = Bot.Message.text("Announcement from @" + snapshot.val().from + " - \n\n" + snapshot.val().title + ":\n\n" + snapshot.val().body).addResponseKeyboard(mentionResponceKeyboard)
 
 							if (snapshot.val().picture_url !== undefined)
 							{
@@ -831,6 +833,7 @@
 						break
 
 					case "stats":
+					case "Stats":
 						var numRegisteredUsers = 0
 						var numSubscribedUsers = 0
 						var numAdmins = 0
@@ -850,13 +853,14 @@
 						usersRef.once("value", function (snapshot)
 						{
 							numRegisteredUsers = snapshot.numChildren()
-							let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins")
+							let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins").addResponseKeyboard(mentionResponceKeyboard)
 
 							message.reply([statsString], message.from)
 						})
 						break
 
 					case "admins":
+					case "Admins":
 						var adminsString = "Here are the admins\n"
 						var postAdminString = "Contact one of them if you are would like to create a poll or make an announcement"
 						usersRef.on("child_added", function (snapshot)
@@ -871,12 +875,12 @@
 						{
 							adminsString = adminsString + "\n" + postAdminString
 							usersRef.off("child_added")
-							message.reply([Bot.Message.text(adminsString)])
+							message.reply([Bot.Message.text(adminsString).addResponseKeyboard(mentionResponceKeyboard)])
 						})
 						break
 
 					default:
-						message.reply("Sorry, I don't know what that means. Please use one of the following commands:\n\nHomework\nLatest Announcement\nStats\nAdmins")
+						message.reply(Bot.Message.text("Sorry, I don't know what that means. Please use one of the following commands:\n\nHomework\nLatest Announcement\nStats\nAdmins").addResponseKeyboard(mentionResponceKeyboard))
 						break
 				}
 			}
