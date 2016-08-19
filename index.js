@@ -2764,7 +2764,7 @@
 
 								usersRef.on("child_added", function (snapshot)
 								{
-									if (snapshot.val().subscribed == true && snapshot.key !== message.from)
+									if (snapshot.val().subscribed == true && snapshot.key != encodedMessageFromUsername)
 									{
 										var decodedMessageFromUsername = snapshot.key
 										decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
@@ -2781,15 +2781,7 @@
 									announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 
 									let announcementSentConfirmation = "Your announcement has been sent"
-									userRef.update(
-									{
-										context: "admin_actions"
-									})
-
-									getContextMessage(message, "admin_actions", function (contextMessage)
-									{
-										bot.send([announcementSentConfirmation, contextMessage], message.from)
-									})
+									updateContext(message, encodedMessageFromUsername, "admin_actions")
 								})
 							})
 						}
@@ -2797,15 +2789,7 @@
 						{
 							announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 
-							userRef.update(
-							{
-								context: "admin_actions"
-							})
-
-							getContextMessage(message, "admin_actions", function (contextMessage)
-							{
-								bot.send([contextMessage], message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "admin_actions")
 						}
 						else
 						{
@@ -2838,15 +2822,7 @@
 							data["body"] = message.body
 							suggestRef.child("pending").child(encodedMessageFromUsername).update(data)
 
-							userRef.update(
-							{
-								context: "confirm_suggest"
-							})
-
-							getContextMessage(message, "confirm_suggest_complaint", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "confirm_suggest")
 						}
 						break
 
