@@ -34,9 +34,6 @@
 	var feedbackRef = database.ref("/feedback")
 	var peerRef = database.ref("/peer_review")
 
-	let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "📄 Peer Review", "🗂 More"]
-	let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "📄 Peer Review", "🗂 More", "🔒 Admin Actions"]
-
 	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function ()
 	{
 		var users = []
@@ -140,6 +137,9 @@
 		{
 			case "home":
 				let homeContextMessage = Bot.Message.text("How can I help you?")
+
+				let userSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More"]
+				let adminSuggestedResponses = ["📝 Homework", "📢 Announcements", "🗳 Voting", "🗂 More", "🔒 Admin Actions"]
 
 				if (message.mention != "bhsacademybot")
 				{
@@ -576,7 +576,7 @@
 			var key = snapshot.key
 			if (key != "homework")
 			{
-				homeworkString = homeworkString + snapshot.key + ": " + snapshot.val() + "\n\n"
+				homeworkString = homeworkString + snapshot.key + ":\n" + snapshot.val() + "\n\n"
 			}
 		})
 
@@ -793,6 +793,7 @@
 
 		userRef.child("context").once("value", function (snapshot)
 		{
+			context = snapshot.val()
 			if (!snapshot.exists())
 			{
 				createUser(message)
@@ -884,10 +885,12 @@
 						break
 				}
 			}
+			else if (message.body == "Dismiss")
+			{
+				resendContextMessage(message, context)
+			}
 			else
 			{
-				context = snapshot.val()
-
 				switch (context)
 				{
 
@@ -1532,13 +1535,6 @@
 								bot.send(contextMessage, message.from)
 							})
 						}
-						else if (message.body == "Dismiss")
-						{
-							getContextMessage(message, context, function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
-						}
 						else
 						{
 
@@ -1732,10 +1728,6 @@
 							{
 								bot.send(contextMessage, message.from)
 							})
-						}
-						else if (message.body == "Dismiss")
-						{
-							resendContextMessage(message, context)
 						}
 						else
 						{
@@ -2173,10 +2165,6 @@
 								}
 							})
 						}
-						else if (message.body == "Dismiss")
-						{
-							resendContextMessage(message, context)
-						}
 						else
 						{
 							userRef.update(
@@ -2214,10 +2202,6 @@
 							{
 								bot.send([addedHomeworkConfirmation, contextMessage], message.from)
 							})
-						}
-						else if (message.body == "Dismiss")
-						{
-							resendContextMessage(message, context)
 						}
 						else
 						{
@@ -2259,10 +2243,6 @@
 									})
 								}
 							})
-						}
-						else if (message.body == "Dismiss")
-						{
-							resendContextMessage(message, context)
 						}
 						else
 						{
@@ -2312,10 +2292,6 @@
 							{
 								bot.send(contextMessage, message.from)
 							})
-						}
-						else if (message.body == "Dismiss")
-						{
-							resendContextMessage(message, context)
 						}
 						else
 						{
@@ -2370,10 +2346,6 @@
 							{
 								bot.send(contextMessage, message.from)
 							})
-						}
-						else if (message.body == "Dismiss")
-						{
-							resendContextMessage(message, context)
 						}
 						else
 						{
@@ -2467,10 +2439,6 @@
 							{
 								bot.send(contextMessage, message.from)
 							})
-						}
-						else if (message.body == "Dismiss")
-						{
-							resendContextMessage(message, context)
 						}
 						else
 						{
