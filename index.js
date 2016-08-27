@@ -8,13 +8,7 @@
 	var schedule = require('node-schedule')
 
 	var contents = fs.readFileSync("BHSAcademyBot.json");
-	var jsonContent = JSON.parse(contents);
-
-	var botData = {}
-	botData["username"] = jsonContent.username
-	botData["apiKey"] = jsonContent.apiKey
-	botData["baseUrl"] = jsonContent.baseUrl
-	botData["manuallySendReadReceipts"] = true
+	var botData = JSON.parse(contents);
 
 	var bot = new Bot(botData)
 
@@ -118,6 +112,23 @@
 		})
 	}
 
+	function getClasses(callback)
+	{
+		var returnValue = []
+		homeworkRef.child("classes").once("value", function(snapshot)
+		{
+			snapshot.forEach(function(childSnapshot)
+			{
+				if (childSnapshot.val() == true)
+				{
+					returnValue.push(childSnapshot.key)
+				}
+			})
+			returnValue.push("Cancel")
+			callback(returnValue)
+		})
+	}
+
 	function resendContextMessage(message, context)
 	{
 		getContextMessage(message, context, function (contextMessage)
@@ -186,10 +197,19 @@
 				})
 				break
 
-			case "add_homework_item":
-				let addHomeworkItemString = Bot.Message.text("What class are you adding homework for?").addResponseKeyboard(["Physics", "Math", "PLTW-POE (Cotie)", "PLTW-POE (Stevens)", "PLTW-DE", "English (Warczynski)", "English (Brach)", "English (Miserendino)", "Spanish 5-6 (Warar)", "Health (Simons)", "Cancel"])
+			case "add_homework_item_classes":
+				getClasses(function(classes)
+				{
+					var homeworkClasses = []
+					classes.forEach(function(homeworkClass)
+					{
+						homeworkClasses.push(homeworkClass)
+					})
 
-				callback(addHomeworkItemString)
+					let addHomeworkItemString = Bot.Message.text("What class are you adding homework for?").addResponseKeyboard(homeworkClasses)
+
+					callback(addHomeworkItemString)
+				})
 				break
 
 			case "add_homework_item_body":
@@ -199,19 +219,19 @@
 				break
 
 			case "remove_homework_item":
-				var homeworkClasses = []
+				var homeworkRemovableClasses = []
 				var removeHomeworkItemString = Bot.Message.text("Which homework item would you like to remove?")
 
 				homeworkRef.child("items").on("child_added", function (snapshot)
 				{
-					homeworkClasses.push(snapshot.key)
+					homeworkRemovableClasses.push(snapshot.key)
 				})
 
 				homeworkRef.child("items").once("value", function (snapshot)
 				{
 					usersRef.off("child_added")
-					homeworkClasses.push("Cancel")
-					removeHomeworkItemString.addResponseKeyboard(homeworkClasses)
+					homeworkRemovableClasses.push("Cancel")
+					removeHomeworkItemString.addResponseKeyboard(homeworkRemovableClasses)
 					callback(removeHomeworkItemString)
 				})
 				break
@@ -323,7 +343,7 @@
 			case "announcements":
 				let announcements = []
 
-				announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(5).on("child_added", function (snapshot)
+				announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(4).on("child_added", function (snapshot)
 				{
 					announcements.push(snapshot.val().title)
 				})
@@ -332,7 +352,7 @@
 				{
 					usersRef.off("child_added")
 					announcements.push("🏠 Back to home")
-					let announcementsString = Bot.Message.text("Here are the last 5 announcements. Tap one to get information on it").addResponseKeyboard(announcements)
+					let announcementsString = Bot.Message.text("Here are the latest announcements").addResponseKeyboard(announcements)
 					callback(announcementsString)
 				})
 				break
@@ -533,6 +553,29 @@
 					callback(ReviewDocumentString)
 				})
 				break
+
+			case "homework":
+				let homeworkContextMessage = Bot.Message.text("What class would you let to get the homework for?")
+				var responses = ["Show all"]
+
+				homeworkRef.child("items").on("child_added", function (snapshot)
+				{
+					responses.push(snapshot.key)
+				})
+
+				homeworkRef.child("items").once("value", function (snapshot)
+				{
+					responses.push("Back")
+					homeworkContextMessage.addResponseKeyboard(responses)
+					callback(homeworkContextMessage)
+				})
+				break
+
+			case "add_homework_item":
+			let addHomeworkItemClassesString = Bot.Message.text("What is the homework that you would like to add to that class?").addResponseKeyboard(["Cancel"], true)
+			callback(addHomeworkItemClassesString)
+			break
+
 		}
 	}
 
@@ -569,29 +612,21 @@
 
 	function getHomeworkString(callback)
 	{
-		var homeworkString = "Here is today's Homework:\n\n"
-
-		homeworkRef.child("items").on("child_added", function (snapshot)
+		homeworkRef.child("items").once("value", function(snapshot)
 		{
-			var key = snapshot.key
-			if (key != "homework")
-			{
-				homeworkString = homeworkString + snapshot.key + ":\n" + snapshot.val() + "\n\n"
-			}
-		})
+			var classHomework = "Here is all the homework for today:\n"
 
-		homeworkRef.child("items").once("value", function (snapshot)
-		{
-			usersRef.off("child_added")
-			if (snapshot.val() !== null)
+			snapshot.forEach(function(classSnapshot)
 			{
-				callback(homeworkString)
-			}
-			else
-			{
-				homeworkString = "There is no registered homework for today"
-				callback(homeworkString)
-			}
+				classHomework = classHomework + "\n" + classSnapshot.key + ":\n"
+
+				classSnapshot.forEach(function(homeworkSnapshot)
+				{
+					classHomework = classHomework + homeworkSnapshot.val() + "\n"
+				})
+			})
+
+		callback(classHomework)
 		})
 	}
 
@@ -889,6 +924,23 @@
 			{
 				resendContextMessage(message, context)
 			}
+			else if (message.body == "View")
+			{
+				announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(1).on("child_added", function (snapshot)
+				{
+						let announcementString = Bot.Message.text(snapshot.val().body).addResponseKeyboard("Dismiss")
+
+						if (snapshot.val().picture_url !== undefined)
+						{
+							let picture = Bot.Message.picture(snapshot.val().picture_url).addResponseKeyboard("Dismiss")
+							bot.send([announcementString, picture], message.from)
+						}
+						else
+						{
+							bot.send([announcementString], message.from)
+						}
+				})
+			}
 			else
 			{
 				switch (context)
@@ -910,20 +962,7 @@
 								break
 
 							case "📝 Homework":
-								getHomeworkString(function (homeworkString)
-								{
-									getContextMessage(message, context, function (contextMessage)
-									{
-										if (contextMessage != null)
-										{
-											message.reply([Bot.Message.text(homeworkString), contextMessage])
-										}
-										else
-										{
-											message.reply([Bot.Message.text(homeworkString)])
-										}
-									})
-								})
+								updateContext(message, encodedMessageFromUsername, "homework")
 								break
 
 							case "🗂 More":
@@ -1147,6 +1186,56 @@
 						///////////////////////////////
 						// END "SETTINGS" CONTEXT
 						///////////////////////////////
+					case "homework":
+						if (message.body == "Back")
+						{
+							updateContext(message, encodedMessageFromUsername, "home")
+						}
+						else if(message.body == "Show all")
+						{
+							getHomeworkString(function(homework)
+							{
+								getContextMessage(message, context, function (contextMessage)
+								{
+									bot.send([homework, contextMessage], message.from)
+								})
+							})
+						}
+						else
+						{
+							var selectedClass = ""
+
+							homeworkRef.child("items").on("child_added", function (snapshot)
+							{
+								if (snapshot.key == message.body)
+								{
+									selectedClass = snapshot.key
+								}
+							})
+
+							homeworkRef.child("items").once("value", function (snapshot)
+							{
+								if (selectedClass != "")
+								{
+								var classHomework = "Here is the homework in " + snapshot.child(selectedClass).key + ":\n"
+
+								snapshot.child(selectedClass).forEach(function(childSnapshot)
+								{
+									classHomework = classHomework + "\n" + childSnapshot.val()
+								})
+
+								getContextMessage(message, context, function (contextMessage)
+								{
+									bot.send([classHomework, contextMessage], message.from)
+								})
+							}
+							else
+							{
+								resendContextMessage(message, context)
+							}
+							})
+						}
+						break
 
 					case "admin_actions":
 						///////////////////////////////
@@ -1427,7 +1516,7 @@
 
 						var announcementFound = false
 
-						announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(5).on("child_added", function (snapshot)
+						announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(4).on("child_added", function (snapshot)
 						{
 							if (snapshot.val().title === message.body)
 							{
@@ -1594,15 +1683,7 @@
 						switch (message.body)
 						{
 							case "Add homework item":
-								userRef.update(
-								{
-									context: "add_homework_item"
-								})
-
-								getContextMessage(message, "add_homework_item", function (contextMessage)
-								{
-									bot.send(contextMessage, message.from)
-								})
+								updateContext(message, encodedMessageFromUsername, "add_homework_item_classes")
 								break
 
 							case "Show homework":
@@ -2125,6 +2206,21 @@
 						}
 						break
 
+					case "add_homework_item_classes":
+						if (message.body != "Cancel")
+						{
+							var data = {}
+							data[encodedMessageFromUsername] = message.body
+							homeworkRef.child("pending_items").update(data)
+
+							updateContext(message, encodedMessageFromUsername, "add_homework_item_body")
+						}
+						else
+						{
+							updateContext(message, encodedMessageFromUsername, "homework_actions")
+						}
+					break
+
 					case "add_homework_item":
 
 						if (message.body != "Cancel" && message.body != "cancel")
@@ -2188,20 +2284,12 @@
 
 							homeworkRef.child("pending_items").child(encodedMessageFromUsername).once("value", function (snapshot)
 							{
-								homeworkData[snapshot.val()] = message.body
-								homeworkRef.child("items").update(homeworkData)
+								let homeworkItem = "• " + message.body
+								homeworkRef.child("items").child(snapshot.val()).push().set(homeworkItem)
 								homeworkRef.child("pending_items").child(encodedMessageFromUsername).set(null)
 							})
 
-							userRef.update(
-							{
-								context: "homework_actions"
-							})
-
-							getContextMessage(message, "homework_actions", function (contextMessage)
-							{
-								bot.send([addedHomeworkConfirmation, contextMessage], message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "homework_actions")
 						}
 						else
 						{
@@ -2300,7 +2388,7 @@
 								context: "admin_actions"
 							})
 
-							getConttextMessage(message, "admin_actions", function (contextMessage)
+							getContextMessage(message, "admin_actions", function (contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2650,7 +2738,6 @@
 						{
 							if (titleMatch == true)
 							{
-
 								pollRef.child("voters").child(encodedMessageFromUsername).once("value", function (snapshot)
 								{
 									if (snapshot.exists())
@@ -2722,15 +2809,7 @@
 								announcementData["negative_timestamp"] = (new Date() / 1000) * -1
 								announcementRef.update(announcementData)
 
-								announcementItems.push(Bot.Message.text("New announcement from @" + message.from + " - \n\n" + snapshot.val().title + ":\n\n" + snapshot.val().body).addResponseKeyboard(["Dismiss"]))
-
-								announcementsRef.child("pending").child(encodedMessageFromUsername).child("picture_url").once("value", function (snapshot)
-								{
-									if (snapshot.exists())
-									{
-										announcementItems.push(Bot.Message.picture(snapshot.val()).addResponseKeyboard(["Dismiss"]))
-									}
-								})
+								announcementItems.push(Bot.Message.text("New announcement from @" + message.from + " - \n\n" + snapshot.val().title + "\n\nWould you like to view it?").addResponseKeyboard(["View", "Dismiss"]))
 
 								var subscribers = []
 
@@ -2752,8 +2831,17 @@
 
 									announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 
-									let announcementSentConfirmation = "Your announcement has been sent"
-									updateContext(message, encodedMessageFromUsername, "admin_actions")
+									let announcementSentConfirmation = "Your announcement has been sent to " + subscribers.length + " users"
+
+									userRef.update(
+									{
+										context: "admin_actions"
+									})
+
+									getContextMessage(message, "admin_actions", function (contextMessage)
+									{
+										bot.send([announcementSentConfirmation, contextMessage], message.from)
+									})
 								})
 							})
 						}
