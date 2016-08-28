@@ -1,11 +1,12 @@
 	'use strict'
 
-	var util = require('util')
-	var fs = require('fs')
-	var http = require('http')
-	var Bot = require('@kikinteractive/kik')
+	var util     = require('util')
+	var fs       = require('fs')
+	var http     = require('http')
+	var Bot      = require('@kikinteractive/kik')
 	var firebase = require('firebase')
 	var schedule = require('node-schedule')
+	var moment   = require('moment');
 
 	var contents = fs.readFileSync("BHSAcademyBot.json");
 	var botData = JSON.parse(contents);
@@ -61,14 +62,23 @@
 		})
 	})
 
-	var clearHomeworkSchedule = schedule.scheduleJob('0 2 * * *', function ()
+	var archiveHomeworkSchedule = schedule.scheduleJob('0 2 * * *', function ()
 	{
-		homeworkRef.child("auto_clear_enabled").once("value", function (snapshot)
+		homeworkRef.child("auto_archive_enabled").once("value", function (snapshot)
 		{
 			if (snapshot.val() == true)
 			{
+				var data = {}
+				homeworkRef.child("items").once("value", function(snapshot)
+				{
+					data["negative_timestamp"] = ((new Date() / 1000) * -1) + 86400
+
+					let archiveRef = homeworkRef.child("past").push()
+					archiveRef.set(snapshot.val())
+					archiveRef.update(data)
+				})
 				homeworkRef.child("items").set(null)
-				console.log("Homework has been auto cleared")
+				console.log("Homework has been archived")
 			}
 		})
 	})
@@ -213,14 +223,73 @@
 				break
 
 			case "add_homework_item_body":
-				let addHomeworkItemBodyString = Bot.Message.text("What is the homework in that class?").addResponseKeyboard(["Cancel"], true)
+			var addHomeworkItemBodyString = Bot.Message.text("What is the homework in that class?").addResponseKeyboard(["Cancel"], true)
+			var currentHomework = "Here is the current homework in "
+			var homeworkIsInPendingClass = false
+				homeworkRef.child("pending_items").child(encodedMessageFromUsername).once("value", function(snapshot)
+				{
+					let pendingClass = snapshot.val()
+					//console.log(pendingClass)
+					currentHomework = currentHomework + pendingClass + ":\n"
+					homeworkRef.child("items").child(pendingClass).once("value", function(snapshot)
+					{
+						//console.log("false")
+						if (snapshot.exists())
+						{
+							//console.log("true")
+							homeworkIsInPendingClass = true
+							addHomeworkItemBodyString = Bot.Message.text("What is the homework in " + pendingClass + " that you would like to add?").addResponseKeyboard(["Cancel"], true)
 
-				callback(addHomeworkItemBodyString)
+							homeworkRef.child("items").child(pendingClass).on("child_added", function(snapshot)
+							{
+								currentHomework = currentHomework + snapshot.val() + "\n"
+							})
+
+							homeworkRef.child("items").child(pendingClass).once("value", function(snapshot)
+							{
+								var responseItems = []
+
+								if (homeworkIsInPendingClass)
+								{
+									let currentHomeworkMessage = Bot.Message.text(currentHomework)
+									responseItems.push(currentHomeworkMessage)
+								}
+
+								responseItems.push(addHomeworkItemBodyString)
+								callback(responseItems)
+							})
+						}
+						else
+						{
+							callback(addHomeworkItemBodyString)
+						}
+					})
+				})
 				break
 
 			case "remove_homework_item":
+			var homeworkRemovableItems = []
+			var removeHomeworkItemString = Bot.Message.text("What item would you like to remove")
+
+			homeworkRef.child("pending_removal").child(encodedMessageFromUsername).once("value", function(snapshot)
+			{
+				homeworkRef.child("items").child(snapshot.val()).once("value", function(snapshot)
+				{
+					snapshot.forEach(function(childSnapshot)
+					{
+						homeworkRemovableItems.push(childSnapshot.val())
+					})
+
+					homeworkRemovableItems.push("Cancel")
+					removeHomeworkItemString.addResponseKeyboard(homeworkRemovableItems)
+					callback(removeHomeworkItemString)
+				})
+			})
+			break
+
+			case "remove_homework_item_class":
 				var homeworkRemovableClasses = []
-				var removeHomeworkItemString = Bot.Message.text("Which homework item would you like to remove?")
+				var removeHomeworkItemClassString = Bot.Message.text("Which class would you like to remove homework from?")
 
 				homeworkRef.child("items").on("child_added", function (snapshot)
 				{
@@ -231,8 +300,8 @@
 				{
 					usersRef.off("child_added")
 					homeworkRemovableClasses.push("Cancel")
-					removeHomeworkItemString.addResponseKeyboard(homeworkRemovableClasses)
-					callback(removeHomeworkItemString)
+					removeHomeworkItemClassString.addResponseKeyboard(homeworkRemovableClasses)
+					callback(removeHomeworkItemClassString)
 				})
 				break
 
@@ -278,7 +347,7 @@
 				break
 
 			case "homework_actions":
-				var homeworkActionsList = ["Show homework", "Add homework item", "Remove homework item", "Manually clear homework"]
+				var homeworkActionsList = ["Show homework", "Add homework item", "Remove homework item", "Manually clear homework", "Add homework class", "Remove homework class"]
 
 				homeworkRef.child("auto_clear_enabled").once("value", function (snapshot)
 				{
@@ -555,7 +624,7 @@
 				break
 
 			case "homework":
-				let homeworkContextMessage = Bot.Message.text("What class would you let to get the homework for?")
+				let homeworkContextMessage = Bot.Message.text("What class would you like to get the homework for?")
 				var responses = ["Show all"]
 
 				homeworkRef.child("items").on("child_added", function (snapshot)
@@ -1709,10 +1778,10 @@
 							case "Remove homework item":
 								userRef.update(
 								{
-									context: "remove_homework_item"
+									context: "remove_homework_item_class"
 								})
 
-								getContextMessage(message, "remove_homework_item", function (contextMessage)
+								getContextMessage(message, "remove_homework_item_class", function (contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -2306,26 +2375,42 @@
 						break
 
 					case "remove_homework_item":
+					if (message.body != "Cancel")
+					{
+						homeworkRef.child("pending_removal").child(encodedMessageFromUsername).once("value", function(snapshot)
+						{
+							let pendingRemovalClass = snapshot.val()
+							homeworkRef.child("items").child(pendingRemovalClass).on("child_added", function(snapshot)
+							{
+								if(message.body == snapshot.val())
+								{
+									homeworkRef.child("items").child(pendingRemovalClass).child(snapshot.key).set(null)
+									homeworkRef.child("pending_removal").child(encodedMessageFromUsername).set(null)
+									updateContext(message, encodedMessageFromUsername, "homework_actions")
+								}
+							})
+						})
+					}
+					else
+					{
+						homeworkRef.child("pending_removal").child("encodedMessageFromUsername").set(null)
+						updateContext(message, encodedMessageFromUsername, "homework_actions")
+					}
+					break
+
+					case "remove_homework_item_class":
 						if (message.body != "Cancel")
 						{
 							homeworkRef.child("items").child(message.body).once("value", function (snapshot)
 							{
 								if (snapshot.exists())
 								{
-									let homeworkItemRemovedString = "Successfully removed homework item"
-									homeworkRef.child("items").child(message.body).set(null)
-									userRef.update(
-									{
-										context: "homework_actions"
-									})
-									getContextMessage(message, "homework_actions", function (contextMessage)
-									{
-										bot.send(contextMessage, message.from)
-									})
+									homeworkRef.child("pending_removal").child(encodedMessageFromUsername).set(message.body)
+									updateContext(message, encodedMessageFromUsername, "remove_homework_item")
 								}
 								else
 								{
-									getContextMessage(message, "homework_actions", function (contextMessage)
+									getContextMessage(message, "remove_homework_item_class", function (contextMessage)
 									{
 										bot.send([contextMessage], message.from)
 									})
@@ -2334,14 +2419,7 @@
 						}
 						else
 						{
-							userRef.update(
-							{
-								context: "admin_actions"
-							})
-							getContextMessage(message, "admin_actions", function (contextMessage)
-							{
-								bot.send(contextMessage, message.from)
-							})
+							updateContext(message, encodedMessageFromUsername, "homework_actions")
 						}
 						break
 
