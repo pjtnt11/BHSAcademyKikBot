@@ -2887,7 +2887,7 @@
 								announcementData["negative_timestamp"] = (new Date() / 1000) * -1
 								announcementRef.update(announcementData)
 
-								announcementItems.push(Bot.Message.text("New announcement from @" + message.from + " - \n\n" + snapshot.val().title + "\n\nWould you like to view it?").addResponseKeyboard(["View", "Dismiss"]))
+								announcementItems.push(Bot.Message.text("New announcement from @" + snapshot.val().from + " - \n\n" + snapshot.val().title + "\n\nWould you like to view it?").addResponseKeyboard(["View", "Dismiss"]))
 
 								var subscribers = []
 
