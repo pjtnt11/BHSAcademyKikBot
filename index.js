@@ -491,16 +491,14 @@
 				break
 
 			case "view_poll_results":
-
-				let activePolls = []
-
-				votingRef.child("polls").child("active").on("child_added", function (snapshot)
-				{
-					activePolls.push(snapshot.val().title)
-				})
-
 				votingRef.child("polls").child("active").once("value", function (snapshot)
 				{
+					let activePolls = []
+					snapshot.forEach(function(childSnapshot)
+					{
+						activePolls.push(childSnapshot.val().title)
+					})
+
 					activePolls.push("🔙 To Voting Options")
 					let viewActivePollsString = Bot.Message.text("Which poll would you like to view the results for?").addResponseKeyboard(activePolls)
 
@@ -509,43 +507,27 @@
 				break
 
 			case "vote":
-				var userVotePendingFound = false
-				var userVotePendingKey = ""
 				var votingItems = []
-				votingRef.child("polls").child("active").on("child_added", function (snapshot)
-				{
-					var encodedMessageFromUsername = message.from
-					encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-					if (snapshot.child("voters").child(encodedMessageFromUsername).exists())
-					{
-						if (snapshot.child("voters").child(encodedMessageFromUsername).val() == "pending")
-						{
-							userVotePendingFound = true
-							userVotePendingKey = snapshot.key
-						}
-					}
-				})
+				var encodedMessageFromUsername = message.from
+				encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
-				votingRef.child("polls").child("active").once("value", function (snapshot)
+				votingRef.child("polls").child("active").orderByChild("voters/" + encodedMessageFromUsername).equalTo("pending").once("value", function (snapshot)
 				{
-					if (userVotePendingFound)
+					snapshot.forEach(function(childSnapshot)
 					{
-						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").on("child_added", function (snapshot)
+						childSnapshot.child("items").forEach(function(childSnapshot)
 						{
-							var decodedMessageFromUsername = snapshot.key
+							var decodedMessageFromUsername = childSnapshot.key
 							decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 							votingItems.push(decodedMessageFromUsername)
 						})
 
-						votingRef.child("polls").child("active").child(userVotePendingKey).child("items").once("value", function (snapshot)
-						{
-							votingItems.push("Cancel")
-							let votingItemsString = Bot.Message.text("Choose which item you would like to vote for (Note: you can not change this)").addResponseKeyboard(votingItems)
+						votingItems.push("Cancel")
+						let votingItemsString = Bot.Message.text("Choose which item you would like to vote for (Note: you can not change this)").addResponseKeyboard(votingItems)
 
-							callback(votingItemsString)
-						})
-					}
+						callback(votingItemsString)
+					})
 				})
 				break
 
@@ -968,6 +950,8 @@
 						{
 							if (snapshot.val().is_admin == true)
 							{
+								var decodedMessageFromUsername = snapshot.key
+								decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 								adminsString = adminsString + "@" + snapshot.key + "\n"
 							}
 						})
@@ -1268,36 +1252,26 @@
 						}
 						else
 						{
-							var selectedClass = ""
-
-							homeworkRef.child("items").on("child_added", function (snapshot)
+							homeworkRef.child("items").child(message.body).once("value", function(snapshot)
 							{
-								if (snapshot.key == message.body)
+								if (snapshot.exists())
 								{
-									selectedClass = snapshot.key
+									var classHomework = "Here is the homework in " + snapshot.key + ":\n"
+
+									snapshot.forEach(function(childSnapshot)
+									{
+										classHomework = classHomework + "\n" + childSnapshot.val()
+									})
+
+									getContextMessage(message, context, function (contextMessage)
+									{
+										bot.send([classHomework, contextMessage], message.from)
+									})
 								}
-							})
-
-							homeworkRef.child("items").once("value", function (snapshot)
-							{
-								if (selectedClass != "")
+								else
 								{
-								var classHomework = "Here is the homework in " + snapshot.child(selectedClass).key + ":\n"
-
-								snapshot.child(selectedClass).forEach(function(childSnapshot)
-								{
-									classHomework = classHomework + "\n" + childSnapshot.val()
-								})
-
-								getContextMessage(message, context, function (contextMessage)
-								{
-									bot.send([classHomework, contextMessage], message.from)
-								})
-							}
-							else
-							{
-								resendContextMessage(message, context)
-							}
+									resendContextMessage(message, context)
+								}
 							})
 						}
 						break
@@ -1378,18 +1352,16 @@
 							case "ℹ️ Admins":
 								var adminsString = "Here are the admins\n"
 								var postAdminString = "Contact one of them if you are would like to create a poll or make an announcement"
-								usersRef.on("child_added", function (snapshot)
+								usersRef.orderByChild("is_admin").equalTo(true).once("value", function (snapshot)
 								{
-									if (snapshot.val().is_admin == true)
+									snapshot.forEach(function(childSnapshot)
 									{
-										adminsString = adminsString + "@" + snapshot.key + "\n"
-									}
-								})
+										var decodedMessageFromUsername = childSnapshot.key
+										decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
+										adminsString = adminsString + "@" + decodedMessageFromUsername + "\n"
+									})
 
-								usersRef.once("value", function (snapshot)
-								{
 									adminsString = adminsString + "\n" + postAdminString
-									usersRef.off("child_added")
 
 									getContextMessage(message, context, function (contextMessage)
 									{
@@ -1428,21 +1400,22 @@
 								var numSubscribedUsers = 0
 								var numAdmins = 0
 
-								usersRef.on("child_added", function (snapshot)
-								{
-									if (snapshot.val().subscribed == true)
-									{
-										numSubscribedUsers++
-									}
-									if (snapshot.val().is_admin == true)
-									{
-										numAdmins++
-									}
-								})
-
 								usersRef.once("value", function (snapshot)
 								{
 									numRegisteredUsers = snapshot.numChildren()
+									snapshot.forEach(function(childSnapshot)
+									{
+										if (childSnapshot.child("subscribed").val())
+										{
+										numSubscribedUsers++
+										}
+
+										if (childSnapshot.child("is_admin").val())
+										{
+										numAdmins++
+										}
+									})
+
 									let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins")
 
 									getContextMessage(message, "more", function (contextMessage)
@@ -2134,33 +2107,24 @@
 						var titleMatch = false
 						var pollRef = votingRef.child("polls")
 
-						votingRef.child("polls").child("active").on("child_added", function (snapshot)
+						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function (snapshot)
 						{
-							if (snapshot.val().title == message.body)
+							if(snapshot.exists())
 							{
-								titleMatch = true
-								pollRef = votingRef.child("polls").child("active").child(snapshot.key)
-							}
-						})
-
-						votingRef.child("polls").child("active").once("value", function (snapshot)
-						{
-							if (titleMatch == true)
-							{
-								let pendingVoters = []
-								pollRef.child("voters").on("child_added", function (snapshot)
+								snapshot.forEach(function(childSnapshot)
 								{
+									let pendingVoters = []
 
-									if (snapshot.val() == "pending")
+									childSnapshot.child("voters").forEach(function(childSnapshot)
 									{
-										var decodedMessageFromUsername = snapshot.key
-										decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
-										pendingVoters.push(decodedMessageFromUsername)
-									}
-								})
+											if (snapshot.val() == "pending")
+											{
+												var decodedMessageFromUsername = childSnapshot.key
+												decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
+												pendingVoters.push(decodedMessageFromUsername)
+											}
+									})
 
-								pollRef.child("voters").once("value", function (snapshot)
-								{
 									getContextMessage(message, "voting_actions", function (contextMessage)
 									{
 										if (pendingVoters.length != 0)
@@ -2178,14 +2142,11 @@
 											context: "voting_options"
 										})
 									})
-								})
 
-								pollRef.once("value", function (snapshot)
-								{
 									var data = {}
-									data[snapshot.key] = snapshot.val()
+									data[childSnapshot.key] = childSnapshot.val()
 									votingRef.child("polls").child("deactivated").update(data)
-									pollRef.set(null)
+									votingRef.child("polls").child("active").child(childSnapshot.key).set(null)
 
 									userRef.update(
 									{
@@ -2196,29 +2157,11 @@
 									{
 										bot.send([contextMessage], message.from)
 									})
-
 								})
 							}
 							else
 							{
-								switch (message.body)
-								{
-									case "🔙 To Voting Actions":
-										userRef.update(
-										{
-											context: "voting_actions"
-										})
-
-										getContextMessage(message, "voting_actions", function (contextMessage)
-										{
-											bot.send([contextMessage], message.from)
-										})
-										break
-
-									default:
-										resendContextMessage(message, context)
-										break
-								}
+							resendContextMessage(message, context)
 							}
 						})
 						break
@@ -2762,15 +2705,7 @@
 								break
 
 							case "View poll results":
-								userRef.update(
-								{
-									context: "view_poll_results"
-								})
-
-								getContextMessage(message, "view_poll_results", function (contextMessage)
-								{
-									bot.send(contextMessage, message.from)
-								})
+								updateContext(message, encodedMessageFromUsername, "view_poll_results")
 								break
 
 							case "🏠 Back to home":
