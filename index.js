@@ -33,20 +33,16 @@
 	{
 		var users = []
 
-		usersRef.on("child_added", function (snapshot)
+		usersRef.orderByChild("subscribed").equalTo(true).once("value", function (snapshot)
 		{
-			if (snapshot.val().subscribed == true)
+			snapshot.forEach(function(childSnapshot)
 			{
 				var decodedMessageFromUsername = snapshot.key
 				decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 
 				users.push(decodedMessageFromUsername)
-			}
-		})
+			})
 
-		usersRef.once("value", function (snapshot)
-		{
-			usersRef.off("child_added")
 			getHomeworkString(function (homework)
 			{
 				homeworkRef.child("notifications_enabled").once("value", function (snapshot)
@@ -412,14 +408,14 @@
 			case "announcements":
 				let announcements = []
 
-				announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(4).on("child_added", function (snapshot)
+				let startTime = ((new Date() / 1000) - 604800) * -1
+				announcementsRef.child("items").orderByChild("negative_timestamp").endAt(startTime).limitToFirst(19).once("value", function (snapshot)
 				{
-					announcements.push(snapshot.val().title)
-				})
+					snapshot.forEach(function(childSnapshot)
+					{
+						announcements.push(childSnapshot.val().title)
+					})
 
-				announcementsRef.child("items").once("value", function (snapshot)
-				{
-					usersRef.off("child_added")
 					announcements.push("🏠 Back to home")
 					let announcementsString = Bot.Message.text("Here are the latest announcements").addResponseKeyboard(announcements)
 					callback(announcementsString)
@@ -1583,61 +1579,53 @@
 
 					case "announcements":
 
-						var announcementFound = false
-
-						announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(4).on("child_added", function (snapshot)
+						announcementsRef.child("items").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function (snapshot)
 						{
-							if (snapshot.val().title === message.body)
+							if (snapshot.exists())
 							{
-								announcementFound = true
-								let announcementString = "Announcement from @" + snapshot.val().from + " -\n\n" + snapshot.val().body
-
-								if (snapshot.val().picture_url !== undefined)
+								snapshot.forEach(function(childSnapshot)
 								{
+									let announcementString = "Announcement from @" + childSnapshot.val().from + " -\n\n" + childSnapshot.val().body
 
-									let picture = Bot.Message.picture(snapshot.val().picture_url)
-
-									getContextMessage(message, context, function (contextMessage)
+									if (childSnapshot.val().picture_url !== undefined)
 									{
-										if (contextMessage !== null)
-										{
-											bot.send([announcementString, picture, contextMessage], message.from)
 
-										}
-										else
-										{
-											bot.send([announcementString, picture], message.from)
-										}
-									})
-								}
-								else
-								{
+										let picture = Bot.Message.picture(childSnapshot.val().picture_url)
 
-									getContextMessage(message, context, function (contextMessage)
+										getContextMessage(message, context, function (contextMessage)
+										{
+											if (contextMessage !== null)
+											{
+												bot.send([announcementString, picture, contextMessage], message.from)
+											}
+											else
+											{
+												bot.send([announcementString, picture], message.from)
+											}
+										})
+									}
+									else
 									{
-										if (contextMessage !== null)
+										getContextMessage(message, context, function (contextMessage)
 										{
-											bot.send([announcementString, contextMessage], message.from)
-
-										}
-										else
-										{
-											bot.send([announcementString], message.from)
-
-										}
-									})
-								}
+											if (contextMessage !== null)
+											{
+												bot.send([announcementString, contextMessage], message.from)
+											}
+											else
+											{
+												bot.send([announcementString], message.from)
+											}
+										})
+									}
+								})
 							}
-						})
-
-						announcementsRef.child("items").once("value", function (snapshot)
-						{
-							if (announcementFound === false)
+							else
 							{
 								if (message.body == "🏠 Back to home")
 								{
-									userRef.update(
-									{
+									userRef.update
+									({
 										context: "home"
 									})
 
@@ -2380,14 +2368,17 @@
 						homeworkRef.child("pending_removal").child(encodedMessageFromUsername).once("value", function(snapshot)
 						{
 							let pendingRemovalClass = snapshot.val()
-							homeworkRef.child("items").child(pendingRemovalClass).on("child_added", function(snapshot)
+							homeworkRef.child("items").child(pendingRemovalClass).once("value", function(snapshot)
 							{
-								if(message.body == snapshot.val())
+								snapshot.forEach(function(childSnapshot)
 								{
-									homeworkRef.child("items").child(pendingRemovalClass).child(snapshot.key).set(null)
-									homeworkRef.child("pending_removal").child(encodedMessageFromUsername).set(null)
-									updateContext(message, encodedMessageFromUsername, "homework_actions")
-								}
+									if(message.body == childSnapshot.val())
+									{
+										homeworkRef.child("items").child(pendingRemovalClass).child(childSnapshot.key).set(null)
+										homeworkRef.child("pending_removal").child(encodedMessageFromUsername).set(null)
+										updateContext(message, encodedMessageFromUsername, "homework_actions")
+									}
+								})
 							})
 						})
 					}
@@ -2631,10 +2622,13 @@
 							timestamp["negative_timestamp"] = (new Date() / 1000) * -1
 							pollRef.update(timestamp)
 
-							votingRef.child("pending").child(encodedMessageFromUsername).child("items").on("child_added", function (snapshot)
+							votingRef.child("pending").child(encodedMessageFromUsername).child("items").once("value", function (snapshot)
 							{
-								data[snapshot.key] = 0
-								pollRef.child("items").update(data)
+								snapshot.forEach(function(childSnapshot)
+								{
+									data[childSnapshot.key] = 0
+									pollRef.child("items").update(data)
+								})
 							})
 
 							votingRef.child("pending").child(encodedMessageFromUsername).child("title").once("value", function (snapshot)
@@ -2654,16 +2648,18 @@
 
 								var subscribers = []
 
-								usersRef.on("child_added", function (snapshot)
+								usersRef.once("value", function (snapshot)
 								{
-
-									if (snapshot.val().subscribed == true && snapshot.key !== encodedMessageFromUsername)
+									snapshot.forEach(function(childSnapshot)
 									{
-										var decodedMessageFromUsername = snapshot.key
-										decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
+										if (snapshot.val().subscribed == true && snapshot.key !== encodedMessageFromUsername)
+										{
+											var decodedMessageFromUsername = snapshot.key
+											decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 
-										subscribers.push(decodedMessageFromUsername)
-									}
+											subscribers.push(decodedMessageFromUsername)
+										}
+									})
 								})
 
 								usersRef.once("value", function (snapshot)
@@ -2799,42 +2795,27 @@
 						break
 
 					case "view_poll_results":
-						var pollTitles = []
-						var titleMatch = false
 
-						var pollRef = votingRef.child("polls")
-						votingRef.child("polls").child("active").on("child_added", function (snapshot)
+						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).once("value", function (snapshot)
 						{
-							if (snapshot.val().title == message.body)
+							if (snapshot.exists())
 							{
-								titleMatch = true
-								pollRef = votingRef.child("polls").child("active").child(snapshot.key)
-							}
-						})
-
-						votingRef.child("polls").child("active").once("value", function (snapshot)
-						{
-							if (titleMatch == true)
-							{
-								pollRef.child("voters").child(encodedMessageFromUsername).once("value", function (snapshot)
+								snapshot.forEach(function(childSnapshot)
 								{
-									if (snapshot.exists())
+									if (childSnapshot.child("voters").child(encodedMessageFromUsername).exists())
 									{
 										var votingResultString = "Here are the current results for this poll:\n\n"
 
-										pollRef.child("items").on("child_added", function (snapshot)
+										childSnapshot.child("items").forEach(function(childSnapshot)
 										{
-											var decodedPollResponce = snapshot.key
+											var decodedPollResponce = childSnapshot.key
 											decodedPollResponce = decodedPollResponce.replace(/%2E/g, "\.")
-											votingResultString = votingResultString + decodedPollResponce + " - " + snapshot.val() + "\n"
+											votingResultString = votingResultString + decodedPollResponce + " - " + childSnapshot.val() + "\n"
 										})
 
-										pollRef.child("items").once("value", function (snapshot)
+										getContextMessage(message, context, function (contextMessage)
 										{
-											getContextMessage(message, context, function (contextMessage)
-											{
-												bot.send([votingResultString, contextMessage], message.from)
-											})
+											bot.send([votingResultString, contextMessage], message.from)
 										})
 									}
 									else
