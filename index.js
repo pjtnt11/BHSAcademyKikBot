@@ -1,12 +1,12 @@
-	'use strict'
+﻿	'use strict'
 
-	var util     = require('util')
-	var fs       = require('fs')
-	var http     = require('http')
-	var Bot      = require('@kikinteractive/kik')
+	var util = require('util')
+	var fs = require('fs')
+	var http = require('http')
+	var Bot = require('@kikinteractive/kik')
 	var firebase = require('firebase')
 	var schedule = require('node-schedule')
-	var moment   = require('moment');
+	var moment = require('moment');
 
 	var contents = fs.readFileSync("BHSAcademyBot.json");
 	var botData = JSON.parse(contents);
@@ -18,7 +18,7 @@
 	firebase.initializeApp(
 	{
 		databaseURL: "https://bhs-academy-kik-bot.firebaseio.com/",
-		serviceAccount: "/home/ec2-user/BHSAcademyBot/serviceAccountCredentials.json"
+		serviceAccount: "/home/ec2-user/Hawklett/serviceAccountCredentials.json"
 	})
 
 	var database = firebase.database()
@@ -29,38 +29,38 @@
 	var feedbackRef = database.ref("/feedback")
 	var peerRef = database.ref("/peer_review")
 
-	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function ()
+	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function()
 	{
 		var users = []
 
-		usersRef.orderByChild("subscribed").equalTo(true).once("value", function (snapshot)
+		usersRef.orderByChild("subscribed").equalTo(true).once("value", function(snapshot)
 		{
 			snapshot.forEach(function(childSnapshot)
 			{
-				var decodedMessageFromUsername = snapshot.key
+				var decodedMessageFromUsername = childSnapshot.key
 				decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
 
 				users.push(decodedMessageFromUsername)
 			})
 
-			getHomeworkString(function (homework)
+			getHomeworkString(function(homework)
 			{
-				homeworkRef.child("notifications_enabled").once("value", function (snapshot)
+				homeworkRef.child("notifications_enabled").once("value", function(snapshot)
 				{
 					if (snapshot.val() == true)
 					{
 						let homeworkString = Bot.Message.text(homework).addResponseKeyboard(["Dismiss"])
 						bot.broadcast(homeworkString, users)
-						console.log("Daily homework notification sent to " + users.length + "users")
+						console.log("Daily homework notification sent to " + users.length + " users")
 					}
 				})
 			})
 		})
 	})
 
-	var archiveHomeworkSchedule = schedule.scheduleJob('0 2 * * *', function ()
+	var archiveHomeworkSchedule = schedule.scheduleJob('0 2 * * *', function()
 	{
-		homeworkRef.child("auto_archive_enabled").once("value", function (snapshot)
+		homeworkRef.child("auto_archive_enabled").once("value", function(snapshot)
 		{
 			if (snapshot.val() == true)
 			{
@@ -94,7 +94,7 @@
 			subscribed: true
 		}
 
-		usersRef.update(data, function (error)
+		usersRef.update(data, function(error)
 		{
 			if (typeof callback === 'function')
 			{
@@ -109,7 +109,7 @@
 		data["context"] = context
 		usersRef.child(user).update(data)
 
-		getContextMessage(message, context, function (contextMessage)
+		getContextMessage(message, context, function(contextMessage)
 		{
 			if (contextMessage != null)
 			{
@@ -137,7 +137,7 @@
 
 	function resendContextMessage(message, context)
 	{
-		getContextMessage(message, context, function (contextMessage)
+		getContextMessage(message, context, function(contextMessage)
 		{
 			bot.send(contextMessage, message.from)
 		})
@@ -160,7 +160,7 @@
 
 				if (message.mention != "bhsacademybot")
 				{
-					adminCheck(message, function (isAdmin)
+					adminCheck(message, function(isAdmin)
 					{
 						if (isAdmin)
 						{
@@ -181,7 +181,7 @@
 			case "settings":
 				let settingsString = Bot.Message.text("Which setting would you like to change?")
 
-				userRef.child("subscribed").once("value", function (snapshot)
+				userRef.child("subscribed").once("value", function(snapshot)
 				{
 					if (snapshot.val() === true)
 					{
@@ -197,7 +197,7 @@
 			case "admin_actions":
 				let adminActionsString = Bot.Message.text("What would you like to do?")
 
-				adminCheck(message, function (is_admin)
+				adminCheck(message, function(is_admin)
 				{
 					callback(adminActionsString.addResponseKeyboard(["Homework", "Voting", "Make an announcement", "🏠 Back to home"]), message.from)
 				})
@@ -219,9 +219,9 @@
 				break
 
 			case "add_homework_item_body":
-			var addHomeworkItemBodyString = Bot.Message.text("What is the homework in that class?").addResponseKeyboard(["Cancel"], true)
-			var currentHomework = "Here is the current homework in "
-			var homeworkIsInPendingClass = false
+				var addHomeworkItemBodyString = Bot.Message.text("What is the homework in that class?").addResponseKeyboard(["Cancel"], true)
+				var currentHomework = "Here is the current homework in "
+				var homeworkIsInPendingClass = false
 				homeworkRef.child("pending_items").child(encodedMessageFromUsername).once("value", function(snapshot)
 				{
 					let pendingClass = snapshot.val()
@@ -258,30 +258,30 @@
 				break
 
 			case "remove_homework_item":
-			var homeworkRemovableItems = []
-			var removeHomeworkItemString = Bot.Message.text("What item would you like to remove")
+				var homeworkRemovableItems = []
+				var removeHomeworkItemString = Bot.Message.text("What item would you like to remove")
 
-			homeworkRef.child("pending_removal").child(encodedMessageFromUsername).once("value", function(snapshot)
-			{
-				homeworkRef.child("items").child(snapshot.val()).once("value", function(snapshot)
+				homeworkRef.child("pending_removal").child(encodedMessageFromUsername).once("value", function(snapshot)
 				{
-					snapshot.forEach(function(childSnapshot)
+					homeworkRef.child("items").child(snapshot.val()).once("value", function(snapshot)
 					{
-						homeworkRemovableItems.push(childSnapshot.val())
-					})
+						snapshot.forEach(function(childSnapshot)
+						{
+							homeworkRemovableItems.push(childSnapshot.val())
+						})
 
-					homeworkRemovableItems.push("Cancel")
-					removeHomeworkItemString.addResponseKeyboard(homeworkRemovableItems)
-					callback(removeHomeworkItemString)
+						homeworkRemovableItems.push("Cancel")
+						removeHomeworkItemString.addResponseKeyboard(homeworkRemovableItems)
+						callback(removeHomeworkItemString)
+					})
 				})
-			})
-			break
+				break
 
 			case "remove_homework_item_class":
 				var homeworkRemovableClasses = []
 				var removeHomeworkItemClassString = Bot.Message.text("Which class would you like to remove homework from?")
 
-				homeworkRef.child("items").once("value", function (snapshot)
+				homeworkRef.child("items").once("value", function(snapshot)
 				{
 					snapshot.forEach(function(childSnapshot)
 					{
@@ -338,7 +338,7 @@
 			case "homework_actions":
 				var homeworkActionsList = ["Show homework", "Add homework item", "Remove homework item", "Manually clear homework", "Add homework class", "Remove homework class"]
 
-				homeworkRef.child("auto_clear_enabled").once("value", function (snapshot)
+				homeworkRef.child("auto_clear_enabled").once("value", function(snapshot)
 				{
 					if (snapshot.val() == true)
 					{
@@ -349,7 +349,7 @@
 						homeworkActionsList.push("Enable homework auto clear")
 					}
 
-					homeworkRef.child("notifications_enabled").once("value", function (snapshot)
+					homeworkRef.child("notifications_enabled").once("value", function(snapshot)
 					{
 						if (snapshot.val() == true)
 						{
@@ -402,7 +402,7 @@
 				let announcements = []
 
 				let startTime = ((new Date() / 1000) - 604800) * -1
-				announcementsRef.child("items").orderByChild("negative_timestamp").endAt(startTime).limitToFirst(19).once("value", function (snapshot)
+				announcementsRef.child("items").orderByChild("negative_timestamp").endAt(startTime).limitToFirst(19).once("value", function(snapshot)
 				{
 					snapshot.forEach(function(childSnapshot)
 					{
@@ -447,7 +447,7 @@
 
 			case "voting":
 				var pollTitles = []
-				votingRef.child("polls").child("active").limitToLast(19).orderByChild("negative_timestamp").once("value", function (snapshot)
+				votingRef.child("polls").child("active").limitToLast(19).orderByChild("negative_timestamp").once("value", function(snapshot)
 				{
 					snapshot.forEach(function(childSnapshot)
 					{
@@ -463,7 +463,7 @@
 
 			case "end_a_poll":
 				var pollTitles = []
-				votingRef.child("polls").child("active").once("value", function (snapshot)
+				votingRef.child("polls").child("active").once("value", function(snapshot)
 				{
 					snapshot.forEach(function(childSnapshot)
 					{
@@ -478,7 +478,7 @@
 				break
 
 			case "view_poll_results":
-				votingRef.child("polls").child("active").once("value", function (snapshot)
+				votingRef.child("polls").child("active").once("value", function(snapshot)
 				{
 					let activePolls = []
 					snapshot.forEach(function(childSnapshot)
@@ -504,7 +504,7 @@
 				{
 					snapshot.forEach(function(childSnapshot)
 					{
-						if(childSnapshot.child("voters").child(encodedMessageFromUsername).val() == "pending")
+						if (childSnapshot.child("voters").child(encodedMessageFromUsername).val() == "pending")
 						{
 							pollRef = childSnapshot.key
 						}
@@ -586,12 +586,12 @@
 
 			case "review_document":
 				var docTitles = []
-				peerRef.child("documents").limitToLast(19).orderByChild("negative_timestamp").on("child_added", function (snapshot)
+				peerRef.child("documents").limitToLast(19).orderByChild("negative_timestamp").on("child_added", function(snapshot)
 				{
 					docTitles.push(snapshot.val().title)
 				})
 
-				peerRef.child("documents").once("value", function (snapshot)
+				peerRef.child("documents").once("value", function(snapshot)
 				{
 					docTitles.push("🔙 To Peer Review")
 					let ReviewDocumentString = Bot.Message.text("Here are all the documents submitted for reviewal. Click on one to be sent to its page.").addResponseKeyboard(docTitles)
@@ -604,7 +604,7 @@
 				let homeworkContextMessage = Bot.Message.text("What class would you like to get the homework for?")
 				var responses = ["Show all"]
 
-				homeworkRef.child("items").once("value", function (snapshot)
+				homeworkRef.child("items").once("value", function(snapshot)
 				{
 					snapshot.forEach(function(childSnapshot)
 					{
@@ -618,9 +618,9 @@
 				break
 
 			case "add_homework_item":
-			let addHomeworkItemClassesString = Bot.Message.text("What is the homework that you would like to add to that class?").addResponseKeyboard(["Cancel"], true)
-			callback(addHomeworkItemClassesString)
-			break
+				let addHomeworkItemClassesString = Bot.Message.text("What is the homework that you would like to add to that class?").addResponseKeyboard(["Cancel"], true)
+				callback(addHomeworkItemClassesString)
+				break
 
 		}
 	}
@@ -649,7 +649,7 @@
 		encodedMessageFromUsername = encodedMessageFromUsername.replace(/\./g, "%2E")
 
 		let userRef = usersRef.child(encodedMessageFromUsername)
-		userRef.child("is_admin").once("value", function (snapshot)
+		userRef.child("is_admin").once("value", function(snapshot)
 		{
 			callback(snapshot.val())
 		})
@@ -672,7 +672,7 @@
 				})
 			})
 
-		callback(classHomework)
+			callback(classHomework)
 		})
 	}
 
@@ -688,11 +688,11 @@
 
 		let sendingMessage = Bot.Message.text("Welcome to the Bartlett High School Academy Kik Bot!\n\nWith this bot you will be able to vote on current topics, receive daily homework information and get notified of announcements.\n\nThis bot was created from scratch by Patrick Stephen so if you have any questions, contact him at @pjtnt11")
 
-		createUser(message, function (error)
+		createUser(message, function(error)
 		{
 			if (error == null)
 			{
-				getContextMessage(message, "home", function (contextMessage)
+				getContextMessage(message, "home", function(contextMessage)
 				{
 					bot.send([sendingMessage, contextMessage], message.from)
 				})
@@ -712,7 +712,7 @@
 
 		let userRef = usersRef.child(encodedMessageFromUsername)
 
-		userRef.once("value", function (snapshot)
+		userRef.once("value", function(snapshot)
 		{
 			if (!snapshot.exists())
 			{
@@ -720,7 +720,7 @@
 			}
 		})
 
-		userRef.child("context").once("value", function (snapshot)
+		userRef.child("context").once("value", function(snapshot)
 		{
 			if (snapshot.val() == "add_announcement_image")
 			{
@@ -733,7 +733,7 @@
 					context: "ask_change_from"
 				})
 
-				getContextMessage(message, "ask_change_from", function (contextMessage)
+				getContextMessage(message, "ask_change_from", function(contextMessage)
 				{
 					bot.send(contextMessage, message.from)
 				})
@@ -752,7 +752,7 @@
 
 		let userRef = usersRef.child(encodedMessageFromUsername)
 
-		userRef.once("value", function (snapshot)
+		userRef.once("value", function(snapshot)
 		{
 			if (!snapshot.exists())
 			{
@@ -764,7 +764,7 @@
 
 		console.log(message.from + ": (video message) " + message.videoUrl)
 
-		userRef.child("context").once("value", function (snapshot)
+		userRef.child("context").once("value", function(snapshot)
 		{
 			resendContextMessage(message, snapshot.val())
 		})
@@ -778,7 +778,7 @@
 
 		let userRef = usersRef.child(encodedMessageFromUsername)
 
-		userRef.once("value", function (snapshot)
+		userRef.once("value", function(snapshot)
 		{
 			if (!snapshot.exists())
 			{
@@ -790,7 +790,7 @@
 
 		console.log(message.from + ": (friend picker message) " + message.picked)
 
-		userRef.child("context").once("value", function (snapshot)
+		userRef.child("context").once("value", function(snapshot)
 		{
 			let context = snapshot.val()
 			if (context == "ask_change_from")
@@ -815,7 +815,7 @@
 
 		let userRef = usersRef.child(encodedMessageFromUsername)
 
-		userRef.once("value", function (snapshot)
+		userRef.once("value", function(snapshot)
 		{
 			if (!snapshot.exists())
 			{
@@ -827,7 +827,7 @@
 
 		console.log(message.from + ": (scan data message) " + message.scanData)
 
-		userRef.child("context").once("value", function (snapshot)
+		userRef.child("context").once("value", function(snapshot)
 		{
 			resendContextMessage(message, snapshot.val())
 		})
@@ -840,7 +840,7 @@
 
 		let userRef = usersRef.child(encodedMessageFromUsername)
 
-		userRef.once("value", function (snapshot)
+		userRef.once("value", function(snapshot)
 		{
 			if (!snapshot.exists())
 			{
@@ -852,7 +852,7 @@
 
 		console.log(message.from + ": (sticker message) " + message.stickerUrl)
 
-		userRef.child("context").once("value", function (snapshot)
+		userRef.child("context").once("value", function(snapshot)
 		{
 			resendContextMessage(message, snapshot.val())
 		})
@@ -872,7 +872,7 @@
 
 		let userRef = usersRef.child(encodedMessageFromUsername)
 
-		userRef.child("context").once("value", function (snapshot)
+		userRef.child("context").once("value", function(snapshot)
 		{
 			context = snapshot.val()
 			if (!snapshot.exists())
@@ -889,7 +889,7 @@
 					case "homework":
 					case "Homework":
 					case "HOMEWORK":
-						getHomeworkString(function (homeworkString)
+						getHomeworkString(function(homeworkString)
 						{
 							message.reply([Bot.Message.text(homeworkString).addResponseKeyboard(mentionResponceKeyboard)])
 						})
@@ -897,7 +897,7 @@
 
 					case "latest announcement":
 					case "Latest Announcement":
-						announcementsRef.child("items").limitToLast(1).once("value", function (snapshot)
+						announcementsRef.child("items").limitToLast(1).once("value", function(snapshot)
 						{
 							snapshot.forEach(function(childSnapshot)
 							{
@@ -923,7 +923,7 @@
 						var numSubscribedUsers = 0
 						var numAdmins = 0
 
-						usersRef.on("child_added", function (snapshot)
+						usersRef.on("child_added", function(snapshot)
 						{
 							if (snapshot.val().subscribed == true)
 							{
@@ -935,7 +935,7 @@
 							}
 						})
 
-						usersRef.once("value", function (snapshot)
+						usersRef.once("value", function(snapshot)
 						{
 							numRegisteredUsers = snapshot.numChildren()
 							let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins").addResponseKeyboard(mentionResponceKeyboard)
@@ -948,7 +948,7 @@
 					case "Admins":
 						var adminsString = "Here are the admins\n"
 						var postAdminString = "Contact one of them if you are would like to create a poll or make an announcement"
-						usersRef.on("child_added", function (snapshot)
+						usersRef.on("child_added", function(snapshot)
 						{
 							if (snapshot.val().is_admin == true)
 							{
@@ -958,7 +958,7 @@
 							}
 						})
 
-						usersRef.once("value", function (snapshot)
+						usersRef.once("value", function(snapshot)
 						{
 							adminsString = adminsString + "\n" + postAdminString
 							usersRef.off("child_added")
@@ -977,7 +977,7 @@
 			}
 			else if (message.body == "View")
 			{
-				announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(1).once("value", function (snapshot)
+				announcementsRef.child("items").orderByChild("negative_timestamp").limitToFirst(1).once("value", function(snapshot)
 				{
 					snapshot.forEach(function(childSnapshot)
 					{
@@ -1029,7 +1029,7 @@
 
 							case "🔒 Admin Actions":
 
-								adminCheck(message, function (is_admin)
+								adminCheck(message, function(is_admin)
 								{
 									if (is_admin)
 									{
@@ -1049,7 +1049,7 @@
 							case "Latest announcement":
 							case "📢 latest announcement":
 							case "📢 Latest Announcement":
-								announcementsRef.child("items").limitToLast(1).once("value", function (snapshot)
+								announcementsRef.child("items").limitToLast(1).once("value", function(snapshot)
 								{
 									snapshot.forEach(function(childSnapshot)
 									{
@@ -1059,7 +1059,7 @@
 										{
 											let picture = Bot.Message.picture(childSnapshot.val().picture_url)
 
-											getContextMessage(message, context, function (contextMessage)
+											getContextMessage(message, context, function(contextMessage)
 											{
 												if (contextMessage !== null)
 												{
@@ -1073,7 +1073,7 @@
 										}
 										else
 										{
-											getContextMessage(message, context, function (contextMessage)
+											getContextMessage(message, context, function(contextMessage)
 											{
 												if (contextMessage !== null)
 												{
@@ -1124,7 +1124,7 @@
 							case "subscribe":
 							case "Subscribe":
 
-								userRef.once("value", function (snapshot)
+								userRef.once("value", function(snapshot)
 								{
 									if (!snapshot.exists())
 									{
@@ -1140,7 +1140,7 @@
 								let subscribeSuccessText = Bot.Message.text("You are now subscribed to receive homework and announcement notifications")
 								let subscribeErrorText = Bot.Message.text("You are already subscribed to receive homework and announcement notifications")
 
-								userRef.child("subscribed").once("value", function (snapshot)
+								userRef.child("subscribed").once("value", function(snapshot)
 								{
 									if (!snapshot.exists())
 									{
@@ -1149,7 +1149,7 @@
 
 									if (snapshot.val() === true)
 									{
-										getContextMessage(message, "more", function (contextMessage)
+										getContextMessage(message, "more", function(contextMessage)
 										{
 											bot.send([subscribeErrorText, contextMessage], message.from)
 										})
@@ -1161,7 +1161,7 @@
 											subscribed: true
 										})
 
-										getContextMessage(message, "home", function (contextMessage)
+										getContextMessage(message, "home", function(contextMessage)
 										{
 											bot.send([subscribeSuccessText, contextMessage], message.from)
 										})
@@ -1180,11 +1180,11 @@
 								let unsubscribeSuccessText = Bot.Message.text("You are now unsubscribed")
 								let unsubscribeErrorText = Bot.Message.text("You already aren't subscribed to receive homework and announcement notifications")
 
-								userRef.child("subscribed").once("value", function (snapshot)
+								userRef.child("subscribed").once("value", function(snapshot)
 								{
 									if (snapshot.val() === false)
 									{
-										getContextMessage(message, "more", function (contextMessage)
+										getContextMessage(message, "more", function(contextMessage)
 										{
 											if (contextMessage !== null)
 											{
@@ -1202,7 +1202,7 @@
 										{
 											subscribed: false
 										})
-										getContextMessage(message, "more", function (contextMessage)
+										getContextMessage(message, "more", function(contextMessage)
 										{
 											if (contextMessage !== null)
 											{
@@ -1225,14 +1225,14 @@
 									context: "more"
 								})
 
-								getContextMessage(message, "more", function (contextMessage)
+								getContextMessage(message, "more", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
 								break
 
 							default:
-								getContextMessage(message, context, function (contextMessage)
+								getContextMessage(message, context, function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -1248,13 +1248,13 @@
 						{
 							updateContext(message, encodedMessageFromUsername, "home")
 						}
-						else if(message.body == "Show all")
+						else if (message.body == "Show all")
 						{
 							getHomeworkString(function(homework)
 							{
-								getContextMessage(message, context, function (contextMessage)
+								getContextMessage(message, context, function(contextMessage)
 								{
-									bot.send([homework, contextMessage], message.from)
+									bot.send([homework, contextMessage.setDelay(2000)], message.from)
 								})
 							})
 						}
@@ -1271,7 +1271,7 @@
 										classHomework = classHomework + "\n" + childSnapshot.val()
 									})
 
-									getContextMessage(message, context, function (contextMessage)
+									getContextMessage(message, context, function(contextMessage)
 									{
 										bot.send([classHomework, contextMessage], message.from)
 									})
@@ -1300,7 +1300,7 @@
 									context: "home"
 								})
 
-								getContextMessage(message, "home", function (contextMessage)
+								getContextMessage(message, "home", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -1313,7 +1313,7 @@
 									context: "homework_actions"
 								})
 
-								getContextMessage(message, "homework_actions", function (contextMessage)
+								getContextMessage(message, "homework_actions", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -1326,7 +1326,7 @@
 									context: "voting_actions"
 								})
 
-								getContextMessage(message, "voting_actions", function (contextMessage)
+								getContextMessage(message, "voting_actions", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -1339,7 +1339,7 @@
 									context: "make_an_announcement"
 								})
 
-								getContextMessage(message, "make_an_announcement", function (contextMessage)
+								getContextMessage(message, "make_an_announcement", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1360,7 +1360,7 @@
 							case "ℹ️ Admins":
 								var adminsString = "Here are the admins\n"
 								var postAdminString = "Contact one of them if you are would like to create a poll or make an announcement"
-								usersRef.orderByChild("is_admin").equalTo(true).once("value", function (snapshot)
+								usersRef.orderByChild("is_admin").equalTo(true).once("value", function(snapshot)
 								{
 									snapshot.forEach(function(childSnapshot)
 									{
@@ -1371,7 +1371,7 @@
 
 									adminsString = adminsString + "\n" + postAdminString
 
-									getContextMessage(message, context, function (contextMessage)
+									getContextMessage(message, context, function(contextMessage)
 									{
 										if (contextMessage != null)
 										{
@@ -1395,7 +1395,7 @@
 									context: "settings"
 								})
 
-								getContextMessage(message, "settings", function (contextMessage)
+								getContextMessage(message, "settings", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -1408,25 +1408,25 @@
 								var numSubscribedUsers = 0
 								var numAdmins = 0
 
-								usersRef.once("value", function (snapshot)
+								usersRef.once("value", function(snapshot)
 								{
 									numRegisteredUsers = snapshot.numChildren()
 									snapshot.forEach(function(childSnapshot)
 									{
 										if (childSnapshot.child("subscribed").val())
 										{
-										numSubscribedUsers++
+											numSubscribedUsers++
 										}
 
 										if (childSnapshot.child("is_admin").val())
 										{
-										numAdmins++
+											numAdmins++
 										}
 									})
 
 									let statsString = Bot.Message.text("There are currently " + numRegisteredUsers + " users registered in the database. Of those, " + numSubscribedUsers + " are subscribed and " + numAdmins + " are admins")
 
-									getContextMessage(message, "more", function (contextMessage)
+									getContextMessage(message, "more", function(contextMessage)
 									{
 										if (contextMessage != null)
 										{
@@ -1449,7 +1449,7 @@
 									context: "feedback"
 								})
 
-								getContextMessage(message, "feedback", function (contextMessage)
+								getContextMessage(message, "feedback", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -1461,7 +1461,7 @@
 									context: "home"
 								})
 
-								getContextMessage(message, "home", function (contextMessage)
+								getContextMessage(message, "home", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -1469,7 +1469,7 @@
 
 							case "👥 Credits":
 								let creditsText = "This bot was programed from scratch by Patrick Stephen.\n\nThanks to Jack Locascio for helping with some of the programing.\n\nAlso, thanks to all of the bot admins for helping with testing, suggesting features and helping manage the bot.\n\nAnd thank you to eveyone else for using the bot and providing feedback"
-								getContextMessage(message, context, function (contextMessage)
+								getContextMessage(message, context, function(contextMessage)
 								{
 									bot.send([creditsText, contextMessage], message.from)
 								})
@@ -1483,7 +1483,7 @@
 
 					case "voting":
 						var pollTitles = []
-						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function (snapshot)
+						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function(snapshot)
 						{
 							if (snapshot.exists())
 							{
@@ -1509,7 +1509,7 @@
 											votingResultString = votingResultString + decodedPollResponce + ":\n" + childSnapshot.val() + "\n\n"
 										})
 
-										getContextMessage(message, context, function (contextMessage)
+										getContextMessage(message, context, function(contextMessage)
 										{
 											bot.send([votingResultString, contextMessage], message.from)
 										})
@@ -1527,14 +1527,14 @@
 									default:
 										resendContextMessage(message, context)
 										break
-									}
 								}
+							}
 						})
 						break
 
 					case "announcements":
 
-						announcementsRef.child("items").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function (snapshot)
+						announcementsRef.child("items").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function(snapshot)
 						{
 							if (snapshot.exists())
 							{
@@ -1547,25 +1547,25 @@
 
 										let picture = Bot.Message.picture(childSnapshot.val().picture_url)
 
-										getContextMessage(message, context, function (contextMessage)
+										getContextMessage(message, context, function(contextMessage)
 										{
 											if (contextMessage !== null)
 											{
-												bot.send([announcementString, picture, contextMessage], message.from)
+												bot.send([announcementString, picture.setDelay(1000), contextMessage.setDelay(3000)], message.from)
 											}
 											else
 											{
-												bot.send([announcementString, picture], message.from)
+												bot.send([announcementString, picture.setDelay(1000)], message.from)
 											}
 										})
 									}
 									else
 									{
-										getContextMessage(message, context, function (contextMessage)
+										getContextMessage(message, context, function(contextMessage)
 										{
 											if (contextMessage !== null)
 											{
-												bot.send([announcementString, contextMessage], message.from)
+												bot.send([announcementString, contextMessage.setDelay(2000)], message.from)
 											}
 											else
 											{
@@ -1579,12 +1579,12 @@
 							{
 								if (message.body == "Back")
 								{
-									userRef.update
-									({
+									userRef.update(
+									{
 										context: "home"
 									})
 
-									getContextMessage(message, "home", function (contextMessage)
+									getContextMessage(message, "home", function(contextMessage)
 									{
 										bot.send(contextMessage, message.from)
 									})
@@ -1602,7 +1602,7 @@
 						var pollRef = votingRef
 						var pollMatch = false
 
-						votingRef.child("polls").child("active").on("child_added", function (snapshot)
+						votingRef.child("polls").child("active").on("child_added", function(snapshot)
 						{
 							if (snapshot.child("voters").child(encodedMessageFromUsername).val() == "pending")
 							{
@@ -1646,7 +1646,7 @@
 
 										userRef.update(
 										{
-												context: "voting"
+											context: "voting"
 										})
 
 										var votingResultString = "Thank you for voting!\n\nHere are the current results for this poll:\n\n"
@@ -1661,7 +1661,7 @@
 											})
 										})
 
-										getContextMessage(message, "voting", function (contextMessage)
+										getContextMessage(message, "voting", function(contextMessage)
 										{
 											bot.send([votingResultString, contextMessage], message.from)
 										})
@@ -1685,9 +1685,9 @@
 							case "Show homework":
 							case "homework":
 							case "Homework":
-								getHomeworkString(function (homeworkString)
+								getHomeworkString(function(homeworkString)
 								{
-									getContextMessage(message, context, function (contextMessage)
+									getContextMessage(message, context, function(contextMessage)
 									{
 										if (contextMessage != null)
 										{
@@ -1708,7 +1708,7 @@
 									context: "remove_homework_item_class"
 								})
 
-								getContextMessage(message, "remove_homework_item_class", function (contextMessage)
+								getContextMessage(message, "remove_homework_item_class", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1720,7 +1720,7 @@
 									context: "clear_homework"
 								})
 
-								getContextMessage(message, "clear_homework", function (contextMessage)
+								getContextMessage(message, "clear_homework", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1732,7 +1732,7 @@
 									context: "enable_homework_auto_clear"
 								})
 
-								getContextMessage(message, "enable_homework_auto_clear", function (contextMessage)
+								getContextMessage(message, "enable_homework_auto_clear", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1744,7 +1744,7 @@
 									context: "disable_homework_auto_clear"
 								})
 
-								getContextMessage(message, "disable_homework_auto_clear", function (contextMessage)
+								getContextMessage(message, "disable_homework_auto_clear", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1756,7 +1756,7 @@
 									context: "enable_homework_notifications"
 								})
 
-								getContextMessage(message, "enable_homework_notifications", function (contextMessage)
+								getContextMessage(message, "enable_homework_notifications", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1768,7 +1768,7 @@
 									context: "disable_homework_notifications"
 								})
 
-								getContextMessage(message, "disable_homework_notifications", function (contextMessage)
+								getContextMessage(message, "disable_homework_notifications", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1780,7 +1780,7 @@
 									context: "admin_actions"
 								})
 
-								getContextMessage(message, "admin_actions", function (contextMessage)
+								getContextMessage(message, "admin_actions", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1801,7 +1801,7 @@
 								context: "voting_actions"
 							})
 
-							getContextMessage(message, "voting_actions", function (contextMessage)
+							getContextMessage(message, "voting_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -1817,7 +1817,7 @@
 								context: "create_a_poll"
 							})
 
-							getContextMessage(message, "create_a_poll", function (contextMessage)
+							getContextMessage(message, "create_a_poll", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -1834,7 +1834,7 @@
 									context: "add_poll_title"
 								})
 
-								getContextMessage(message, "add_poll_title", function (contextMessage)
+								getContextMessage(message, "add_poll_title", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1846,7 +1846,7 @@
 									context: "end_a_poll"
 								})
 
-								getContextMessage(message, "end_a_poll", function (contextMessage)
+								getContextMessage(message, "end_a_poll", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1858,7 +1858,7 @@
 									context: "admin_actions"
 								})
 
-								getContextMessage(message, "admin_actions", function (contextMessage)
+								getContextMessage(message, "admin_actions", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1876,7 +1876,7 @@
 									context: "suggestion"
 								})
 
-								getContextMessage(message, "suggestion", function (contextMessage)
+								getContextMessage(message, "suggestion", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1888,7 +1888,7 @@
 									context: "complaint"
 								})
 
-								getContextMessage(message, "complaint", function (contextMessage)
+								getContextMessage(message, "complaint", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1900,7 +1900,7 @@
 									context: "home"
 								})
 
-								getContextMessage(message, "home", function (contextMessage)
+								getContextMessage(message, "home", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -1924,7 +1924,7 @@
 							})
 
 							let clearedAllHomeworkString = "Homework has been cleared"
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([clearedAllHomeworkString, contextMessage], message.from)
 							})
@@ -1938,7 +1938,7 @@
 								context: "homework_actions"
 							})
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -1965,7 +1965,7 @@
 
 							let EnableHomeworkNotificationsString = "Homework notifications has been enabled"
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([EnableHomeworkNotificationsString, contextMessage], message.from)
 							})
@@ -1978,7 +1978,7 @@
 								context: "homework_actions"
 							})
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([contextMessage], message.from)
 							})
@@ -2005,7 +2005,7 @@
 
 							let DisableHomeworkNotificationsString = "Homework notifications has been disabled"
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([DisableHomeworkNotificationsString, contextMessage], message.from)
 							})
@@ -2018,7 +2018,7 @@
 								context: "homework_actions"
 							})
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([contextMessage], message.from)
 							})
@@ -2045,7 +2045,7 @@
 
 							let EnableHomeworkAutoClearString = "Homework auto clear has been enabled"
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([EnableHomeworkAutoClearString, contextMessage], message.from)
 							})
@@ -2058,7 +2058,7 @@
 								context: "homework_actions"
 							})
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([contextMessage], message.from)
 							})
@@ -2073,9 +2073,9 @@
 						var titleMatch = false
 						var pollRef = votingRef.child("polls")
 
-						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function (snapshot)
+						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).limitToFirst(1).once("value", function(snapshot)
 						{
-							if(snapshot.exists())
+							if (snapshot.exists())
 							{
 								snapshot.forEach(function(childSnapshot)
 								{
@@ -2083,15 +2083,15 @@
 
 									childSnapshot.child("voters").forEach(function(childSnapshot)
 									{
-											if (snapshot.val() == "pending")
-											{
-												var decodedMessageFromUsername = childSnapshot.key
-												decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
-												pendingVoters.push(decodedMessageFromUsername)
-											}
+										if (snapshot.val() == "pending")
+										{
+											var decodedMessageFromUsername = childSnapshot.key
+											decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
+											pendingVoters.push(decodedMessageFromUsername)
+										}
 									})
 
-									getContextMessage(message, "voting_actions", function (contextMessage)
+									getContextMessage(message, "voting_actions", function(contextMessage)
 									{
 										if (pendingVoters.length != 0)
 										{
@@ -2099,7 +2099,7 @@
 										}
 									})
 
-									pendingVoters.forEach(function (userName)
+									pendingVoters.forEach(function(userName)
 									{
 										var encodedUsersUsername = userName
 										encodedUsersUsername = encodedUsersUsername.replace(/\./g, "%2E")
@@ -2119,7 +2119,7 @@
 										context: "voting_actions"
 									})
 
-									getContextMessage(message, "voting_actions", function (contextMessage)
+									getContextMessage(message, "voting_actions", function(contextMessage)
 									{
 										bot.send([contextMessage], message.from)
 									})
@@ -2127,7 +2127,7 @@
 							}
 							else
 							{
-								switch(message.body)
+								switch (message.body)
 								{
 									case "🔙 To Voting Actions":
 										updateContext(message, encodedMessageFromUsername, "voting_actions")
@@ -2157,7 +2157,7 @@
 								context: "homework_actions"
 							})
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([DisableHomeworkAutoClearString, contextMessage], message.from)
 							})
@@ -2170,7 +2170,7 @@
 								context: "homework_actions"
 							})
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send([contextMessage], message.from)
 							})
@@ -2194,7 +2194,7 @@
 						{
 							updateContext(message, encodedMessageFromUsername, "homework_actions")
 						}
-					break
+						break
 
 					case "add_homework_item":
 
@@ -2202,7 +2202,7 @@
 						{
 							var homeworkData = {}
 
-							homeworkRef.child("items").child(message.body).once("value", function (snapshot)
+							homeworkRef.child("items").child(message.body).once("value", function(snapshot)
 							{
 								if (snapshot.exists())
 								{
@@ -2214,7 +2214,7 @@
 										context: "confirm_add_homework_item"
 									})
 
-									getContextMessage(message, "confirm_add_homework_item", function (contextMessage)
+									getContextMessage(message, "confirm_add_homework_item", function(contextMessage)
 									{
 										bot.send(contextMessage, message.from)
 									})
@@ -2229,7 +2229,7 @@
 										context: "add_homework_item_body"
 									})
 
-									getContextMessage(message, "add_homework_item_body", function (contextMessage)
+									getContextMessage(message, "add_homework_item_body", function(contextMessage)
 									{
 										bot.send(contextMessage, message.from)
 									})
@@ -2243,7 +2243,7 @@
 								context: "admin_actions"
 							})
 
-							getContextMessage(message, "admin_actions", function (contextMessage)
+							getContextMessage(message, "admin_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2257,7 +2257,7 @@
 							let addedHomeworkConfirmation = "Homework item added"
 							var homeworkData = {}
 
-							homeworkRef.child("pending_items").child(encodedMessageFromUsername).once("value", function (snapshot)
+							homeworkRef.child("pending_items").child(encodedMessageFromUsername).once("value", function(snapshot)
 							{
 								let homeworkItem = "• " + message.body
 								homeworkRef.child("items").child(snapshot.val()).push().set(homeworkItem)
@@ -2273,7 +2273,7 @@
 								context: "homework_actions"
 							})
 
-							getContextMessage(message, "homework_actions", function (contextMessage)
+							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2281,36 +2281,36 @@
 						break
 
 					case "remove_homework_item":
-					if (message.body != "Cancel")
-					{
-						homeworkRef.child("pending_removal").child(encodedMessageFromUsername).once("value", function(snapshot)
+						if (message.body != "Cancel")
 						{
-							let pendingRemovalClass = snapshot.val()
-							homeworkRef.child("items").child(pendingRemovalClass).once("value", function(snapshot)
+							homeworkRef.child("pending_removal").child(encodedMessageFromUsername).once("value", function(snapshot)
 							{
-								snapshot.forEach(function(childSnapshot)
+								let pendingRemovalClass = snapshot.val()
+								homeworkRef.child("items").child(pendingRemovalClass).once("value", function(snapshot)
 								{
-									if(message.body == childSnapshot.val())
+									snapshot.forEach(function(childSnapshot)
 									{
-										homeworkRef.child("items").child(pendingRemovalClass).child(childSnapshot.key).set(null)
-										homeworkRef.child("pending_removal").child(encodedMessageFromUsername).set(null)
-										updateContext(message, encodedMessageFromUsername, "homework_actions")
-									}
+										if (message.body == childSnapshot.val())
+										{
+											homeworkRef.child("items").child(pendingRemovalClass).child(childSnapshot.key).set(null)
+											homeworkRef.child("pending_removal").child(encodedMessageFromUsername).set(null)
+											updateContext(message, encodedMessageFromUsername, "homework_actions")
+										}
+									})
 								})
 							})
-						})
-					}
-					else
-					{
-						homeworkRef.child("pending_removal").child("encodedMessageFromUsername").set(null)
-						updateContext(message, encodedMessageFromUsername, "homework_actions")
-					}
-					break
+						}
+						else
+						{
+							homeworkRef.child("pending_removal").child("encodedMessageFromUsername").set(null)
+							updateContext(message, encodedMessageFromUsername, "homework_actions")
+						}
+						break
 
 					case "remove_homework_item_class":
 						if (message.body != "Cancel")
 						{
-							homeworkRef.child("items").child(message.body).once("value", function (snapshot)
+							homeworkRef.child("items").child(message.body).once("value", function(snapshot)
 							{
 								if (snapshot.exists())
 								{
@@ -2319,7 +2319,7 @@
 								}
 								else
 								{
-									getContextMessage(message, "remove_homework_item_class", function (contextMessage)
+									getContextMessage(message, "remove_homework_item_class", function(contextMessage)
 									{
 										bot.send([contextMessage], message.from)
 									})
@@ -2363,7 +2363,7 @@
 								context: "add_announcement_body"
 							})
 
-							getContextMessage(message, "add_announcement_body", function (contextMessage)
+							getContextMessage(message, "add_announcement_body", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2375,7 +2375,7 @@
 								context: "admin_actions"
 							})
 
-							getContextMessage(message, "admin_actions", function (contextMessage)
+							getContextMessage(message, "admin_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2394,7 +2394,7 @@
 								context: "confirm_make_announcement"
 							})
 
-							getContextMessage(message, "confirm_make_announcement", function (contextMessage)
+							getContextMessage(message, "confirm_make_announcement", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2417,7 +2417,7 @@
 								context: "ask_announcement_image"
 							})
 
-							getContextMessage(message, "ask_announcement_image", function (contextMessage)
+							getContextMessage(message, "ask_announcement_image", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2430,7 +2430,7 @@
 								context: "admin_actions"
 							})
 
-							getContextMessage(message, "admin_actions", function (contextMessage)
+							getContextMessage(message, "admin_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2446,7 +2446,7 @@
 								context: "admin_actions"
 							})
 
-							getContextMessage(message, "admin_actions", function (contextMessage)
+							getContextMessage(message, "admin_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2466,7 +2466,7 @@
 								context: "add_announcement_image"
 							})
 
-							getContextMessage(message, "add_announcement_image", function (contextMessage)
+							getContextMessage(message, "add_announcement_image", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2478,7 +2478,7 @@
 								context: "ask_change_from"
 							})
 
-							getContextMessage(message, "ask_change_from", function (contextMessage)
+							getContextMessage(message, "ask_change_from", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2498,7 +2498,7 @@
 								context: "voting_actions"
 							})
 
-							getContextMessage(message, "voting_actions", function (contextMessage)
+							getContextMessage(message, "voting_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2510,7 +2510,7 @@
 								context: "ask_make_poll_announcement"
 							})
 
-							getContextMessage(message, "ask_make_poll_announcement", function (contextMessage)
+							getContextMessage(message, "ask_make_poll_announcement", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2540,7 +2540,7 @@
 							timestamp["negative_timestamp"] = (new Date() / 1000) * -1
 							pollRef.update(timestamp)
 
-							votingRef.child("pending").child(encodedMessageFromUsername).child("items").once("value", function (snapshot)
+							votingRef.child("pending").child(encodedMessageFromUsername).child("items").once("value", function(snapshot)
 							{
 								snapshot.forEach(function(childSnapshot)
 								{
@@ -2549,11 +2549,11 @@
 								})
 							})
 
-							votingRef.child("pending").child(encodedMessageFromUsername).child("title").once("value", function (snapshot)
+							votingRef.child("pending").child(encodedMessageFromUsername).child("title").once("value", function(snapshot)
 							{
 								let makeAnnouncement = false
 
-								votingRef.child("pending").child(encodedMessageFromUsername).child("make_announcement").once("value", function (snapshot)
+								votingRef.child("pending").child(encodedMessageFromUsername).child("make_announcement").once("value", function(snapshot)
 								{
 									let makeAnnouncement = snapshot.val()
 								})
@@ -2566,7 +2566,7 @@
 
 								var subscribers = []
 
-								usersRef.once("value", function (snapshot)
+								usersRef.once("value", function(snapshot)
 								{
 									snapshot.forEach(function(childSnapshot)
 									{
@@ -2580,7 +2580,7 @@
 									})
 								})
 
-								usersRef.once("value", function (snapshot)
+								usersRef.once("value", function(snapshot)
 								{
 
 									userRef.update(
@@ -2595,7 +2595,7 @@
 									{
 										bot.broadcast(votingAnnouncementString, subscribers)
 									}
-									getContextMessage(message, "voting_actions", function (contextMessage)
+									getContextMessage(message, "voting_actions", function(contextMessage)
 									{
 										bot.send(["Poll created", contextMessage], message.from)
 									})
@@ -2610,7 +2610,7 @@
 								context: "voting_actions"
 							})
 
-							getContextMessage(message, "voting_actions", function (contextMessage)
+							getContextMessage(message, "voting_actions", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2635,7 +2635,7 @@
 								context: "confirm_create_poll"
 							})
 
-							getContextMessage(message, "confirm_create_poll", function (contextMessage)
+							getContextMessage(message, "confirm_create_poll", function(contextMessage)
 							{
 								bot.send([contextMessage], message.from)
 							})
@@ -2650,14 +2650,14 @@
 								context: "confirm_create_poll"
 							})
 
-							getContextMessage(message, "confirm_create_poll", function (contextMessage)
+							getContextMessage(message, "confirm_create_poll", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
 						}
 						else
 						{
-							getContextMessage(message, context, function (contextMessage)
+							getContextMessage(message, context, function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2673,7 +2673,7 @@
 									context: "voting"
 								})
 
-								getContextMessage(message, "voting", function (contextMessage)
+								getContextMessage(message, "voting", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -2689,14 +2689,14 @@
 									context: "home"
 								})
 
-								getContextMessage(message, "home", function (contextMessage)
+								getContextMessage(message, "home", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
 								break
 
 							default:
-								getContextMessage(message, context, function (contextMessage)
+								getContextMessage(message, context, function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -2706,7 +2706,7 @@
 
 					case "view_poll_results":
 
-						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).once("value", function (snapshot)
+						votingRef.child("polls").child("active").orderByChild("title").equalTo(message.body).once("value", function(snapshot)
 						{
 							if (snapshot.exists())
 							{
@@ -2723,14 +2723,14 @@
 											votingResultString = votingResultString + decodedPollResponce + " - " + childSnapshot.val() + "\n"
 										})
 
-										getContextMessage(message, context, function (contextMessage)
+										getContextMessage(message, context, function(contextMessage)
 										{
 											bot.send([votingResultString, contextMessage], message.from)
 										})
 									}
 									else
 									{
-										getContextMessage(message, "view_poll_results", function (contextMessage)
+										getContextMessage(message, "view_poll_results", function(contextMessage)
 										{
 											let viewVotingErrorString = "You must vote for this poll before you can view its results"
 											bot.send([viewVotingErrorString, contextMessage], message.from)
@@ -2748,14 +2748,14 @@
 											context: "voting_options"
 										})
 
-										getContextMessage(message, "voting_options", function (contextMessage)
+										getContextMessage(message, "voting_options", function(contextMessage)
 										{
 											bot.send([contextMessage], message.from)
 										})
 										break
 
 									default:
-										getContextMessage(message, context, function (contextMessage)
+										getContextMessage(message, context, function(contextMessage)
 										{
 											bot.send([contextMessage], message.from)
 										})
@@ -2768,7 +2768,7 @@
 					case "confirm_make_announcement":
 						if (message.body == "Yes")
 						{
-							announcementsRef.child("pending").child(encodedMessageFromUsername).once("value", function (snapshot)
+							announcementsRef.child("pending").child(encodedMessageFromUsername).once("value", function(snapshot)
 							{
 								let announcementRef = announcementsRef.child("items").push()
 
@@ -2781,9 +2781,9 @@
 
 								var subscribers = []
 
-								usersRef.orderByChild("subscribed").equalTo(true).once("value", function (snapshot)
+								usersRef.orderByChild("subscribed").equalTo(true).once("value", function(snapshot)
 								{
-									snapshot.forEach(function (childSnapshot)
+									snapshot.forEach(function(childSnapshot)
 									{
 										if (childSnapshot.key != encodedMessageFromUsername)
 										{
@@ -2805,7 +2805,7 @@
 										context: "admin_actions"
 									})
 
-									getContextMessage(message, "admin_actions", function (contextMessage)
+									getContextMessage(message, "admin_actions", function(contextMessage)
 									{
 										bot.send([announcementSentConfirmation, contextMessage], message.from)
 									})
@@ -2820,7 +2820,7 @@
 						}
 						else
 						{
-							getContextMessage(message, context, function (contextMessage)
+							getContextMessage(message, context, function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2838,7 +2838,7 @@
 								context: "feedback"
 							})
 
-							getContextMessage(message, "feedback", function (contextMessage)
+							getContextMessage(message, "feedback", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2864,7 +2864,7 @@
 								context: "feedback"
 							})
 
-							getContextMessage(message, "feedback", function (contextMessage)
+							getContextMessage(message, "feedback", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2880,7 +2880,7 @@
 								context: "confirm_complaint"
 							})
 
-							getContextMessage(message, "confirm_complaint", function (contextMessage)
+							getContextMessage(message, "confirm_complaint", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2892,7 +2892,7 @@
 						{
 							let suggestRef = feedbackRef.child("suggestions").child("items").push()
 
-							feedbackRef.child("suggestions").child("pending").child(encodedMessageFromUsername).child("body").once("value", function (snapshot)
+							feedbackRef.child("suggestions").child("pending").child(encodedMessageFromUsername).child("body").once("value", function(snapshot)
 							{
 								var data = {}
 								data["timestamp"] = (new Date() / 1000)
@@ -2907,7 +2907,7 @@
 									context: "more"
 								})
 
-								getContextMessage(message, "more", function (contextMessage)
+								getContextMessage(message, "more", function(contextMessage)
 								{
 									bot.send(["Thanks for the suggestion! We'll review it and hopefully add it as soon as we can.", contextMessage], message.from)
 								})
@@ -2921,14 +2921,14 @@
 								context: "suggestion"
 							})
 
-							getContextMessage(message, "suggestion", function (contextMessage)
+							getContextMessage(message, "suggestion", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
 						}
 						else
 						{
-							getContextMessage(message, context, function (contextMessage)
+							getContextMessage(message, context, function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2941,7 +2941,7 @@
 							let complaintRef = feedbackRef.child("complaints").child("items").push()
 							var data = {}
 
-							feedbackRef.child("complaints").child("pending").child(encodedMessageFromUsername).child("body").once("value", function (snapshot)
+							feedbackRef.child("complaints").child("pending").child(encodedMessageFromUsername).child("body").once("value", function(snapshot)
 							{
 								var data = {}
 								data["timestamp"] = (new Date() / 1000)
@@ -2955,7 +2955,7 @@
 									context: "more"
 								})
 
-								getContextMessage(message, "more", function (contextMessage)
+								getContextMessage(message, "more", function(contextMessage)
 								{
 									bot.send(["Sorry about that :/ We will get to fixing it right away!", contextMessage], message.from)
 								})
@@ -2969,14 +2969,14 @@
 								context: "complaint"
 							})
 
-							getContextMessage(message, "complaint", function (contextMessage)
+							getContextMessage(message, "complaint", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
 						}
 						else
 						{
-							getContextMessage(message, context, function (contextMessage)
+							getContextMessage(message, context, function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2992,7 +2992,7 @@
 									context: "review_document"
 								})
 
-								getContextMessage(message, "review_document", function (contextMessage)
+								getContextMessage(message, "review_document", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -3004,7 +3004,7 @@
 									context: "submit_document"
 								})
 
-								getContextMessage(message, "submit_document", function (contextMessage)
+								getContextMessage(message, "submit_document", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -3016,14 +3016,14 @@
 									context: "home"
 								})
 
-								getContextMessage(message, "home", function (contextMessage)
+								getContextMessage(message, "home", function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
 								break
 
 							default:
-								getContextMessage(message, context, function (contextMessage)
+								getContextMessage(message, context, function(contextMessage)
 								{
 									bot.send(contextMessage, message.from)
 								})
@@ -3040,7 +3040,7 @@
 								context: "peer_review"
 							})
 
-							getContextMessage(message, "peer_review", function (contextMessage)
+							getContextMessage(message, "peer_review", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -3058,7 +3058,7 @@
 								context: "submit_document_title"
 							})
 
-							getContextMessage(message, "submit_document_title", function (contextMessage)
+							getContextMessage(message, "submit_document_title", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -3074,7 +3074,7 @@
 								context: "submit_document"
 							})
 
-							getContextMessage(message, "submit_document", function (contextMessage)
+							getContextMessage(message, "submit_document", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -3090,7 +3090,7 @@
 								context: "confirm_submit_document"
 							})
 
-							getContextMessage(message, "confirm_submit_document", function (contextMessage)
+							getContextMessage(message, "confirm_submit_document", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -3102,7 +3102,7 @@
 						{
 							let docRef = peerRef.child("documents").push()
 
-							peerRef.child("pending").child(encodedMessageFromUsername).once("value", function (snapshot)
+							peerRef.child("pending").child(encodedMessageFromUsername).once("value", function(snapshot)
 							{
 								var data = snapshot.val()
 								data["negative_timestamp"] = (new Date() / 1000)
@@ -3111,10 +3111,10 @@
 
 								peerRef.child("pending").child(encodedMessageFromUsername).set(null)
 
-								usersRef.on("child_added", function (snapshot)
+								usersRef.on("child_added", function(snapshot)
 								{
 
-									usersRef.once("value", function (snapshot)
+									usersRef.once("value", function(snapshot)
 									{
 
 										userRef.update(
@@ -3123,7 +3123,7 @@
 										})
 
 										usersRef.off("peer_review")
-										getContextMessage(message, "peer_review", function (contextMessage)
+										getContextMessage(message, "peer_review", function(contextMessage)
 										{
 											bot.send(["Your document has been submitted! Make sure that people with access to the URL can make suggestions on the document.", contextMessage], message.from)
 										})
@@ -3139,14 +3139,14 @@
 								context: "submit_document"
 							})
 
-							getContextMessage(message, "submit_document", function (contextMessage)
+							getContextMessage(message, "submit_document", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
 						}
 						else
 						{
-							getContextMessage(message, context, function (contextMessage)
+							getContextMessage(message, context, function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -3159,7 +3159,7 @@
 
 						var docRef = peerRef.child("documents")
 
-						peerRef.child("documents").on("child_added", function (snapshot)
+						peerRef.child("documents").on("child_added", function(snapshot)
 						{
 							if (snapshot.val().title == message.body)
 							{
@@ -3168,14 +3168,14 @@
 							}
 						})
 
-						docRef.once("value", function (snapshot)
+						docRef.once("value", function(snapshot)
 						{
 							if (titleMatch)
 							{
 								let reviewMessage = "Here is the URL to the document. Please make sure to tell " + snapshot.val().from + " that you reviewed their document after you're done."
 								let urlMessage = Bot.Message.link(snapshot.val().url)
 
-								getContextMessage(message, "review_document", function (contextMessage)
+								getContextMessage(message, "review_document", function(contextMessage)
 								{
 									bot.send([reviewMessage, urlMessage, contextMessage], message.from)
 								})
@@ -3191,14 +3191,14 @@
 											context: "peer_review"
 										})
 
-										getContextMessage(message, "peer_review", function (contextMessage)
+										getContextMessage(message, "peer_review", function(contextMessage)
 										{
 											bot.send([contextMessage], message.from)
 										})
 										break
 
 									default:
-										getContextMessage(message, context, function (contextMessage)
+										getContextMessage(message, context, function(contextMessage)
 										{
 											bot.send([contextMessage], message.from)
 										})
