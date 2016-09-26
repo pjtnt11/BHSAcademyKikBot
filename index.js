@@ -29,7 +29,7 @@
 	var feedbackRef = database.ref("/feedback")
 	var peerRef = database.ref("/peer_review")
 
-	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * *', function()
+	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * 1-5', function()
 	{
 		var users = []
 
@@ -58,7 +58,7 @@
 		})
 	})
 
-	var archiveHomeworkSchedule = schedule.scheduleJob('0 2 * * *', function()
+	var archiveHomeworkSchedule = schedule.scheduleJob('0 2 * * 1-5', function()
 	{
 		homeworkRef.child("auto_archive_enabled").once("value", function(snapshot)
 		{
@@ -67,12 +67,12 @@
 				var data = {}
 				homeworkRef.child("items").once("value", function(snapshot)
 				{
-					data["negative_timestamp"] = ((new Date() / 1000) * -1) + 86400
-
 					let archiveRef = homeworkRef.child("past").push()
-					archiveRef.set(snapshot.val())
+					data["items"] = snapshot.val()
+					data["negative_timestamp"] = ((new Date() / 1000) * -1) + 86400
 					archiveRef.update(data)
 				})
+
 				homeworkRef.child("items").set(null)
 				console.log("Homework has been archived")
 			}
@@ -338,15 +338,15 @@
 			case "homework_actions":
 				var homeworkActionsList = ["Show homework", "Add homework item", "Remove homework item", "Manually clear homework", "Add homework class", "Remove homework class"]
 
-				homeworkRef.child("auto_clear_enabled").once("value", function(snapshot)
+				homeworkRef.child("auto_archive_enabled").once("value", function(snapshot)
 				{
 					if (snapshot.val() == true)
 					{
-						homeworkActionsList.push("Disable homework auto clear")
+						homeworkActionsList.push("Disable homework auto archive")
 					}
 					else
 					{
-						homeworkActionsList.push("Enable homework auto clear")
+						homeworkActionsList.push("Enable homework auto archive")
 					}
 
 					homeworkRef.child("notifications_enabled").once("value", function(snapshot)
@@ -374,14 +374,14 @@
 				callback(clearHomeworkString)
 				break
 
-			case "enable_homework_auto_clear":
-				let EnableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to enable homework auto clear? (this happens everyday at 2:00AM)").addResponseKeyboard(["Yes", "No"])
+			case "enable_homework_auto_archive":
+				let EnableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to enable homework auto archive? (This happens everyday at 2:00AM)").addResponseKeyboard(["Yes", "No"])
 
 				callback(EnableHomeworkAutoClear)
 				break
 
-			case "disable_homework_auto_clear":
-				let DisableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to disable homework auto clear?").addResponseKeyboard(["Yes", "No"])
+			case "disable_homework_auto_archive":
+				let DisableHomeworkAutoClear = Bot.Message.text("Are you sure that you want to disable homework auto archive?").addResponseKeyboard(["Yes", "No"])
 
 				callback(DisableHomeworkAutoClear)
 				break
@@ -954,7 +954,7 @@
 							{
 								var decodedMessageFromUsername = snapshot.key
 								decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
-								adminsString = adminsString + "@" + snapshot.key + "\n"
+								adminsString = adminsString + "@" + decodedMessageFromUsername
 							}
 						})
 
@@ -1273,7 +1273,7 @@
 
 									getContextMessage(message, context, function(contextMessage)
 									{
-										bot.send([classHomework, contextMessage], message.from)
+										bot.send([classHomework, contextMessage.setDelay(2000)], message.from)
 									})
 								}
 								else
@@ -1358,7 +1358,7 @@
 						switch (message.body)
 						{
 							case "ℹ️ Admins":
-								var adminsString = "Here are the admins\n"
+								var adminsString = "Here are the admins:\n"
 								var postAdminString = "Contact one of them if you are would like to create a poll or make an announcement"
 								usersRef.orderByChild("is_admin").equalTo(true).once("value", function(snapshot)
 								{
@@ -1366,7 +1366,7 @@
 									{
 										var decodedMessageFromUsername = childSnapshot.key
 										decodedMessageFromUsername = decodedMessageFromUsername.replace(/%2E/g, "\.")
-										adminsString = adminsString + "@" + decodedMessageFromUsername + "\n"
+										adminsString = adminsString + "@" + decodedMessageFromUsername
 									})
 
 									adminsString = adminsString + "\n" + postAdminString
@@ -1511,7 +1511,7 @@
 
 										getContextMessage(message, context, function(contextMessage)
 										{
-											bot.send([votingResultString, contextMessage], message.from)
+											bot.send([votingResultString, contextMessage.setDelay(2000)], message.from)
 										})
 									}
 								})
@@ -1691,7 +1691,7 @@
 									{
 										if (contextMessage != null)
 										{
-											bot.send([Bot.Message.text(homeworkString), contextMessage], message.from)
+											bot.send([Bot.Message.text(homeworkString), contextMessage.setDelay(2000)], message.from)
 										}
 										else
 										{
@@ -1726,25 +1726,25 @@
 								})
 								break
 
-							case "Enable homework auto clear":
+							case "Enable homework auto archive":
 								userRef.update(
 								{
-									context: "enable_homework_auto_clear"
+									context: "enable_homework_auto_archive"
 								})
 
-								getContextMessage(message, "enable_homework_auto_clear", function(contextMessage)
+								getContextMessage(message, "enable_homework_auto_archive", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
 								break
 
-							case "Disable homework auto clear":
+							case "Disable homework auto archive":
 								userRef.update(
 								{
-									context: "disable_homework_auto_clear"
+									context: "disable_homework_auto_archive"
 								})
 
-								getContextMessage(message, "disable_homework_auto_clear", function(contextMessage)
+								getContextMessage(message, "disable_homework_auto_archive", function(contextMessage)
 								{
 									bot.send([contextMessage], message.from)
 								})
@@ -2029,13 +2029,13 @@
 						}
 						break
 
-					case "enable_homework_auto_clear":
+					case "enable_homework_auto_archive":
 						if (message.body == "Yes")
 						{
 
 							homeworkRef.update(
 							{
-								auto_clear_enabled: true
+								auto_archive_enabled: true
 							})
 
 							userRef.update(
@@ -2043,7 +2043,7 @@
 								context: "homework_actions"
 							})
 
-							let EnableHomeworkAutoClearString = "Homework auto clear has been enabled"
+							let EnableHomeworkAutoClearString = "Homework auto archive has been enabled"
 
 							getContextMessage(message, "homework_actions", function(contextMessage)
 							{
@@ -2141,16 +2141,16 @@
 						})
 						break
 
-					case "disable_homework_auto_clear":
+					case "disable_homework_auto_archive":
 						if (message.body == "Yes")
 						{
 
 							homeworkRef.update(
 							{
-								auto_clear_enabled: false
+								auto_archive_enabled: false
 							})
 
-							let DisableHomeworkAutoClearString = "Homework auto clear has been disabled"
+							let DisableHomeworkAutoClearString = "Homework auto archive has been disabled"
 
 							userRef.update(
 							{
