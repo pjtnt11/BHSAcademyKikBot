@@ -1,4 +1,4 @@
-﻿	'use strict'
+	'use strict'
 
 	var util = require('util')
 	var fs = require('fs')
@@ -10,7 +10,7 @@
 
 	var contents = fs.readFileSync("BHSAcademyBot.json");
 	var botData = JSON.parse(contents);
-
+	botData["staticKeyboard"] = new Bot.ResponseKeyboard(["📝 Homework", "📢 Latest Announcement", "📊 Stats", "ℹ️ Admins"])
 	var bot = new Bot(botData)
 
 	bot.updateBotConfiguration()
@@ -28,8 +28,9 @@
 	var votingRef = database.ref("/voting")
 	var feedbackRef = database.ref("/feedback")
 	var peerRef = database.ref("/peer_review")
+	var alertsRef = announcementsRef.child("alerts")
 
-	var dailyHomeworkSchedule = schedule.scheduleJob('30 15 * * 1-5', function()
+	var dailyHomeworkSchedule = schedule.scheduleJob('0 16 * * 1-5', function()
 	{
 		var users = []
 
@@ -67,14 +68,13 @@
 				var data = {}
 				homeworkRef.child("items").once("value", function(snapshot)
 				{
-					let archiveRef = homeworkRef.child("past").push()
+					let archiveRef = homeworkRef.child("archived").push()
 					data["items"] = snapshot.val()
-					data["negative_timestamp"] = ((new Date() / 1000) * -1) + 86400
+					data["negative_timestamp"] = ((new Date() / 1000) * -1) + 86400 + 7200
 					archiveRef.update(data)
+					homeworkRef.child("items").set(null)
+					console.log("Homework has been archived")
 				})
-
-				homeworkRef.child("items").set(null)
-				console.log("Homework has been archived")
 			}
 		})
 	})
@@ -199,7 +199,7 @@
 
 				adminCheck(message, function(is_admin)
 				{
-					callback(adminActionsString.addResponseKeyboard(["Homework", "Voting", "Make an announcement", "🏠 Back to home"]), message.from)
+					callback(adminActionsString.addResponseKeyboard(["Homework", "Voting", "Announcements & Alerts", "Back"]), message.from)
 				})
 				break
 
@@ -318,7 +318,7 @@
 				break
 
 			case "ask_change_from":
-				let askChangeFromString = Bot.Message.text("Would you like to change who the announcement is from (instead of yourself)?").addResponseKeyboard([Bot.Response.friendPicker("Select a person", 1, 1), "No"])
+				let askChangeFromString = Bot.Message.text("Would you like to change who the announcement is from (instead of yourself)?").addResponseKeyboard([Bot.Response.friendPicker("Yes", 1, 1), "No"])
 
 				callback(askChangeFromString)
 				break
@@ -336,7 +336,7 @@
 				break
 
 			case "homework_actions":
-				var homeworkActionsList = ["Show homework", "Add homework item", "Remove homework item", "Manually clear homework", "Add homework class", "Remove homework class"]
+				var homeworkActionsList = ["Show homework", "Add homework item", "Remove homework item", "Manually clear homework"]
 
 				homeworkRef.child("auto_archive_enabled").once("value", function(snapshot)
 				{
@@ -584,6 +584,18 @@
 				callback(ConfirmSubmitDocumentString)
 				break
 
+			case "create_an_alert":
+				let createAnAlertString = Bot.Message.text("What would you like to say?").addResponseKeyboard(["Cancel"], true)
+
+				callback(createAnAlertString)
+				break
+
+			case "announcements_alerts":
+			let announcementsAlertsString = Bot.Message.text("Would you like to create an announcement or an alert?").addResponseKeyboard(["Make an announcement", "Create an alert", "Back"])
+
+			callback(announcementsAlertsString)
+			break
+
 			case "review_document":
 				var docTitles = []
 				peerRef.child("documents").limitToLast(19).orderByChild("negative_timestamp").on("child_added", function(snapshot)
@@ -660,19 +672,28 @@
 	{
 		homeworkRef.child("items").once("value", function(snapshot)
 		{
-			var classHomework = "Here is all the homework for today:\n"
+      if(snapshot.exists())
+      {
+			  var classHomework = "Here is all the homework for today:\n"
 
-			snapshot.forEach(function(classSnapshot)
-			{
-				classHomework = classHomework + "\n" + classSnapshot.key + ":\n"
+			  snapshot.forEach(function(classSnapshot)
+			  {
+				  classHomework = classHomework + "\n" + classSnapshot.key + ":\n"
 
-				classSnapshot.forEach(function(homeworkSnapshot)
-				{
-					classHomework = classHomework + homeworkSnapshot.val() + "\n"
-				})
-			})
+				  classSnapshot.forEach(function(homeworkSnapshot)
+				  {
+					  classHomework = classHomework + homeworkSnapshot.val() + "\n"
+				  })
+			  })
 
-			callback(classHomework)
+			  callback(classHomework)
+      }
+      else
+      {
+        var errorMessage = "There is no homework registered for today... YET!"
+
+        callback(errorMessage)
+      }
 		})
 	}
 
@@ -883,20 +904,17 @@
 			var context = snapshot.val()
 			if (message.mention == "bhsacademybot")
 			{
-				let mentionResponceKeyboard = ["Homework", "Latest Announcement", "Stats", "Admins"]
+				let mentionResponceKeyboard = ["📝 Homework", "📢 Latest Announcement", "📊 Stats", "ℹ️ Admins"]
 				switch (message.body)
 				{
-					case "homework":
-					case "Homework":
-					case "HOMEWORK":
+					case "📝 Homework":
 						getHomeworkString(function(homeworkString)
 						{
 							message.reply([Bot.Message.text(homeworkString).addResponseKeyboard(mentionResponceKeyboard)])
 						})
 						break
 
-					case "latest announcement":
-					case "Latest Announcement":
+					case "📢 Latest Announcement":
 						announcementsRef.child("items").limitToLast(1).once("value", function(snapshot)
 						{
 							snapshot.forEach(function(childSnapshot)
@@ -917,8 +935,7 @@
 						})
 						break
 
-					case "stats":
-					case "Stats":
+					case "📊 Stats":
 						var numRegisteredUsers = 0
 						var numSubscribedUsers = 0
 						var numAdmins = 0
@@ -944,8 +961,7 @@
 						})
 						break
 
-					case "admins":
-					case "Admins":
+					case "ℹ️ Admins":
 						var adminsString = "Here are the admins\n"
 						var postAdminString = "Contact one of them if you are would like to create a poll or make an announcement"
 						usersRef.on("child_added", function(snapshot)
@@ -1284,6 +1300,52 @@
 						}
 						break
 
+					case "announcements_alerts":
+
+					switch (message.body)
+					{
+						case "Make an announcement":
+							userRef.update(
+							{
+								context: "make_an_announcement"
+							})
+
+							getContextMessage(message, "make_an_announcement", function(contextMessage)
+							{
+								bot.send([contextMessage], message.from)
+							})
+							break
+
+						case "Create an alert":
+						userRef.update(
+							{
+								context: "create_an_alert"
+							})
+
+							getContextMessage(message, "create_an_alert", function(contextMessage)
+							{
+								bot.send([contextMessage], message.from)
+							})
+							break
+
+						case "Back":
+							userRef.update(
+								{
+									context: "admin_actions"
+								})
+
+								getContextMessage(message, "admin_actions", function(contextMessage)
+								{
+									bot.send([contextMessage], message.from)
+								})
+							break
+
+						default:
+							resendContextMessage(message, context)
+							break
+					}
+					break
+
 					case "admin_actions":
 						///////////////////////////////
 						// START "ADMIN ACTIONS" CONTEXT
@@ -1291,10 +1353,7 @@
 
 						switch (message.body)
 						{
-							case "back":
 							case "Back":
-							case "🔙":
-							case "🏠 Back to home":
 								userRef.update(
 								{
 									context: "home"
@@ -1332,18 +1391,17 @@
 								})
 								break
 
-							case "Make an announcement":
-
+							case "Announcements & Alerts":
 								userRef.update(
-								{
-									context: "make_an_announcement"
-								})
+									{
+										context: "announcements_alerts"
+									})
 
-								getContextMessage(message, "make_an_announcement", function(contextMessage)
-								{
-									bot.send([contextMessage], message.from)
-								})
-								break
+									getContextMessage(message, "announcements_alerts", function(contextMessage)
+									{
+										bot.send(contextMessage, message.from)
+									})
+								break;
 
 							default:
 								resendContextMessage(message, context)
@@ -2372,10 +2430,10 @@
 						{
 							userRef.update(
 							{
-								context: "admin_actions"
+								context: "announcements_alerts"
 							})
 
-							getContextMessage(message, "admin_actions", function(contextMessage)
+							getContextMessage(message, "announcements_alerts", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2427,10 +2485,10 @@
 							announcementsRef.child("pending").child(encodedMessageFromUsername).set(null)
 							userRef.update(
 							{
-								context: "admin_actions"
+								context: "announcements_alerts"
 							})
 
-							getContextMessage(message, "admin_actions", function(contextMessage)
+							getContextMessage(message, "announcements_alerts", function(contextMessage)
 							{
 								bot.send(contextMessage, message.from)
 							})
@@ -2764,6 +2822,25 @@
 							}
 						})
 						break
+
+					case "create_an_alert":
+						if(message.body != "Cancel")
+						{
+							let alertRef = alertsRef.child("pending").child(encodedMessageFromUsername).child("body").set(message.body)
+						}
+						else
+						{
+							userRef.update(
+										{
+											context: "announcements_alerts"
+										})
+
+										getContextMessage(message, "announcements_alerts", function(contextMessage)
+										{
+											bot.send([contextMessage], message.from)
+										})
+						}
+					break
 
 					case "confirm_make_announcement":
 						if (message.body == "Yes")
